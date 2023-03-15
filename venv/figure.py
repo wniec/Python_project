@@ -1,4 +1,4 @@
-from Vector2D import Vector2D
+import vector_comparision
 
 
 class Figure:
@@ -10,10 +10,13 @@ class Figure:
         self.promoted = promoted
 
     def move(self, step):
-        self.position = self.position.add(step)
+        self.position = vector_comparision.add(step,self.position)
 
     def promote(self):
         pass
+
+    def to_str(self):
+        return ""
 
 
 class King(Figure):
@@ -21,6 +24,9 @@ class King(Figure):
 
     def promote(self):
         return self
+
+    def to_str(self):
+        return "K"
 
 
 class Rook(Figure):
@@ -30,11 +36,17 @@ class Rook(Figure):
     def promote(self):
         return Dragon(self.color, self.position, True)
 
+    def to_str(self):
+        return "R"
+
 
 class Dragon(Figure):
     steps = [(i, 0) for i in range(8)] + [(-i, 0) for i in range(8)] + [(0, i) for i in range(8)] + [(0, -i) for i in
                                                                                                      range(8)] + \
             [(1, 1), (-1, 1), (-1, -1), (-1, -1)]
+
+    def to_str(self):
+        return "D"
 
 
 class Bishop(Figure):
@@ -44,15 +56,24 @@ class Bishop(Figure):
     def promote(self):
         return Horse(self.color, self.position, True)
 
+    def to_str(self):
+        return "B"
+
 
 class Horse(Figure):
     steps = [(i, i) for i in range(8)] + [(-i, -i) for i in range(8)] + [(-i, i) for i in range(8)] + [(i, -i) for i in
                                                                                                        range(8)] + \
             [(1, 0), (0, 1), (-1, 0), (0, -1)]
 
+    def to_str(self):
+        return "H"
+
 
 class Gold(Figure):
     steps = [(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (0, -1)]
+
+    def to_str(self):
+        return "G"
 
 
 class Silver(Figure):
@@ -61,12 +82,18 @@ class Silver(Figure):
     def promote(self):
         return Gold(self.color, self.position, True)
 
+    def to_str(self):
+        return "S"
+
 
 class Knight(Figure):
     steps = [(1, 2), (-1, 2)]
 
     def promote(self):
         return Gold(self.color, self.position, True)
+
+    def to_str(self):
+        return "N"
 
 
 class Lance(Figure):
@@ -75,6 +102,9 @@ class Lance(Figure):
     def promote(self):
         return Gold(self.color, self.position, True)
 
+    def to_str(self):
+        return "L"
+
 
 class Pawn(Figure):
     steps = [(0, 1)]
@@ -82,11 +112,26 @@ class Pawn(Figure):
     def promote(self):
         return Gold(self.color, self.position, True)
 
+    def to_str(self):
+        return "p"
+
 
 def create_frigures_dicts(color_down, color_up):
     down_dict = dict()
     up_dict = dict()
     for i in range(9):
-        down_dict.add(Pawn(color_down, Vector2D(i, 2)))
-        up_dict.add(Pawn(color_up, Vector2D(i, 2)))
-    # Pozostałe figury TBA
+        down_dict[(i, 2)] = Pawn(color_down, (i, 2))
+        up_dict[(i, 6)] = (Pawn(color_up, (i, 6)))
+    down_dict[(1, 1)] = (Bishop(color_down, (1, 1)))
+    up_dict[(7, 7)] = (Bishop(color_down, (7, 7)))
+    down_dict[(7, 1)] = (Rook(color_down, (7, 1)))
+    up_dict[(1, 7)] = (Rook(color_down, (1, 7)))
+    down_dict[(4, 0)] = (King(color_down, (4, 0)))
+    up_dict[(4, 8)] = (King(color_down, (4, 8)))
+    other_figures = [Lance, Knight, Silver, Gold]
+    for i, figure in enumerate(other_figures):
+        down_dict[(i, 0)] = (figure(color_down, (i, 0)))
+        down_dict[(8 - i, 0)] = (figure(color_down, (8 - i, 0)))
+        up_dict[(i, 0)] = (figure(color_down, (i, 8)))
+        up_dict[(8 - i, 0)] = (figure(color_down, (8 - i, 8)))
+    return down_dict, up_dict
