@@ -124,7 +124,7 @@ class Board:
         path = self.get_path((piece.row, piece.col), pos)
 
         for row, col in path:
-            if self.grid[row][col] != None:
+            if self.grid[row][col] is not None:
                 return True
 
         return False
@@ -132,7 +132,7 @@ class Board:
     def get_available(self, piece: pieces.Piece) -> set:
         """
         Returns available squares to which `piece` can move.
-        @param Piece `piece`:
+        param Piece `piece`:
         """
 
         inbounds = lambda row, col: 0 <= row < self.size and 0 <= col < self.size
@@ -145,12 +145,12 @@ class Board:
                 row, col = piece.row - move[0], piece.col - move[1]
 
             if (
-                inbounds(row, col)
-                and not self.is_blocked((row, col), piece)
-                and (
-                    self.grid[row][col] == None
+                    inbounds(row, col)
+                    and not self.is_blocked((row, col), piece)
+                    and (
+                    self.grid[row][col] is None
                     or self.grid[row][col].color != piece.color
-                )
+            )
             ):
                 available_pos.add((row, col))
 
@@ -164,9 +164,9 @@ class Board:
         @param (int, int) `new_position`: pair of integers specifing new position
         """
         if (
-            self.grid[new_position[0]][new_position[1]] != None
-            and self.grid[new_position[0]][new_position[1]].color
-            == piece.color.opposite()
+                self.grid[new_position[0]][new_position[1]] != None
+                and self.grid[new_position[0]][new_position[1]].color
+                == piece.color.opposite()
         ):
             self.capture(self.grid[new_position[0]][new_position[1]])
 
@@ -279,7 +279,6 @@ class Board:
                 else:
                     print("·", " ", end="")
             print()
-
 
 # os.system("cls")
 
