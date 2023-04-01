@@ -60,6 +60,8 @@ class King(Piece):
             (1, -1),
             (-1, 1),
         ]
+        self.value = 1000.00
+        self.value_in_hand = -1000.00
 
 
 class Rook(Piece):

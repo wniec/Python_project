@@ -13,6 +13,7 @@ class Board:
         self.grid = [[None for _ in range(size)] for _ in range(size)]
         self.active = ({}, {})
         self.captured = ({}, {})
+        # first black, second white
 
     def setup(self) -> None:
         """
@@ -279,6 +280,13 @@ class Board:
                 else:
                     print("·", " ", end="")
             print()
+
+    def evaluate(self):
+        side_0 = sum([self.captured[0][piece].value for piece in self.captured[0]])
+        side_0 += sum([self.active[0][piece].value for piece in self.active[0]])
+        side_1 = sum([self.captured[1][piece].value for piece in self.captured[1]])
+        side_1 += sum([self.active[1][piece].value for piece in self.active[1]])
+        return side_0, side_1
 
 # os.system("cls")
 
