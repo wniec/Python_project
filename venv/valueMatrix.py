@@ -11,7 +11,7 @@ def read_values():
 
 
 class ValueMatrix:
-    Figures = {'P': 0, 'L': 1, 'N': 2, 'S': 3, 'G': 4, 'B': 5, 'R': 6, 'D': 7, 'H': 8, 'K': 9}
+    pieces = {'P': 0, 'L': 1, 'N': 2, 'S': 3, 'G': 4, 'B': 5, 'R': 6, 'D': 7, 'H': 8, 'K': 9}
 
     def __init__(self):
         self.valueMatrix = read_values()
@@ -35,7 +35,7 @@ class ValueMatrix:
             else:
                 x, y = 8 - a.row, 8 - a.col
             name = a.name
-            score += self.valueMatrix[self.Figures[name], x, y]
+            score += self.valueMatrix[self.pieces[name], x, y]
         for c in captured:
             score += c.value_in_hand
         return score

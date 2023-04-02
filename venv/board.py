@@ -1,6 +1,6 @@
 import pieces
 from pieces import COLOR
-
+from itertools import product
 
 class Board:
     def __init__(self, size: int) -> None:
@@ -13,6 +13,7 @@ class Board:
         self.grid = [[None for _ in range(size)] for _ in range(size)]
         self.active = ({}, {})
         self.captured = ({}, {})
+        self.kings = (None, None)
         # first black, second white
 
     def setup(self) -> None:
@@ -53,6 +54,8 @@ class Board:
             self.active[color.value]["G1"] = gold_l
             self.active[color.value]["G2"] = gold_r
             self.active[color.value]["K"] = king
+
+            self.kings[color.value] = king
 
         # Set second ranks
         for row in (1, self.size - 2):
@@ -201,7 +204,7 @@ class Board:
     def capture(self, capture_piece: pieces.Piece):
         """
         Deletes piece `capture_piece` from board (i.e. from structures `Board.grid` and
-        `Board.active`) and adds it to structure `Board.captured`.
+        `Board.active`), degrades and adds it to structure `Board.captured`.
         @param Piece `piece`:
         """
 
@@ -212,7 +215,7 @@ class Board:
 
         self.captured[capture_piece.color.opposite().value][capture_key] = self.active[
             capture_piece.color.value
-        ][capture_key]
+        ][capture_key].degrade()
 
         del self.active[capture_piece.color.value][capture_key]
 
@@ -258,6 +261,28 @@ class Board:
                 return False
 
         return True
+    def get_available_drops(self,piece):
+        """
+
+        returns all free positions on which player or bot can drop their piece on
+        """
+        free = set()
+        match piece.name:
+            case 'P'|'L':
+                possible_rows = {i for i in range(8)}
+            case 'N':
+                possible_rows = {i for i in range(7)}
+            case _:
+                possible_rows = {i for i in range(9)}
+        possible_cols = set(i for i in range(9))
+        if piece.name =='P':
+            possible_cols.difference_update({pawn.col for pawn in self.active[piece.color] if not pawn.promoted})
+        for x, in possible_rows:
+            for y in possible_cols:
+                if self.grid[x][y] is not None and not self.is_checkmate(self.kings[piece.color.opposite()]) :
+                    free.add((x,y))
+        return free
+
 
     def show(self):
         print("   ", end="")
@@ -271,12 +296,12 @@ class Board:
                 if self.grid[row][col] != None:
                     if self.grid[row][col].color == COLOR.BLACK:
                         print(
-                            "\033[91m{}\033[0m".format(self.grid[row][col].img),
+                            "\033[91m{}\033[0m".format(self.grid[row][col].name),
                             " ",
                             end="",
                         )
                     else:
-                        print("\033[0m{}".format(self.grid[row][col].img), " ", end="")
+                        print("\033[0m{}".format(self.grid[row][col].name), " ", end="")
                 else:
                     print("·", " ", end="")
             print()

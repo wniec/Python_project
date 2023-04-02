@@ -35,6 +35,14 @@ class Bot:
                 best.put((-move_result, x, y, piece))
             i += 1
         i = 0
+        for piece_sign in self.board.captured[color.value]:
+            piece = self.board.captured[color.value][piece_sign]
+            possible = self.board.get_free
+            for x, y in possible:
+                move_result = self.test_move(x, y, piece, grid)
+                best.put((-move_result, x, y, piece))
+            i += 1
+        i = 0
         while i < n and not best.empty():
             move = best.get()
             negative_value, x, y, piece = move
@@ -78,6 +86,7 @@ class Bot:
                 return COLOR.WHITE
             _, x, y, piece, grid = move
             self.board.move(piece, (x, y))
+            self.board.show()
             i += 1
         side1, side2 = self.board.evaluate()
         return COLOR.WHITE if side1 < side2 else COLOR.BLACK

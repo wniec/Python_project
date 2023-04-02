@@ -26,6 +26,9 @@ class Piece:
     def promote(self):
         pass
 
+    def degrade(self):
+        return Piece((self.row, self.col), self.color)
+
 
 class Pawn(Piece):
     def __init__(self, pos, color, promoted=False):
