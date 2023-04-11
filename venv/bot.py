@@ -1,6 +1,6 @@
-import copy
 import queue
 from pieces import COLOR
+import pieces
 
 
 def change_grid(x, y, piece, grid):
@@ -14,7 +14,7 @@ class Bot:
         self.matrix = matrix
         self.board = board
 
-    def test_move(self, x, y, piece, grid):
+    def test_move(self, x: int, y: int, piece: pieces.Piece, grid: [[]]) -> int:
         current_value = self.matrix.valueMatrix[self.matrix.Figures[piece.name], piece.row, piece.col]
         new_value = 0
         if grid[x][y] is not None and grid[x][y].color == piece.color.opposite():
@@ -22,7 +22,7 @@ class Bot:
         new_value += self.matrix.valueMatrix[self.matrix.Figures[piece.name], x, y]
         return (new_value - current_value) * piece.value
 
-    def test_best_moves_depth1(self, color, grid, n):
+    def test_best_moves_depth1(self, color: pieces.COLOR, grid: list[list], n: int) -> list[tuple]:
         # side is 0 or 1 -depending on whose moves are we testing
         best = queue.PriorityQueue()
         result = []
@@ -54,7 +54,7 @@ class Bot:
         # checking all would take too long
         return result
 
-    def test_best_moves(self, color, depth, width, grid):
+    def test_best_moves(self, color, depth, width, grid) -> (int, int, int, pieces.Piece, list[list]):
         # function, that returns the best move for given depth
         # tests @width moves for depth 1, for each calculating an opposite move with @depth -1
         if depth == 1:
@@ -70,7 +70,8 @@ class Bot:
                     best_move = (best_move_val, x, y, piece, move_grid)
             return best_move
 
-    def play_against_bot(self, bot, depth, width):
+    def play_against_bot(self, bot, depth: int, width: int) -> pieces.COLOR:
+        # function for testing bot
         # A bot vs bot game: returns COLOR of winner
         i = 0
         while i < 200:

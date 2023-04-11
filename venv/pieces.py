@@ -12,8 +12,13 @@ class COLOR(Enum):
         return COLOR.BLACK
 
 
+pieces_dict = {'P': 0, 'L': 1, 'N': 2, 'S': 3, 'G': 4, 'B': 5, 'R': 6, 'D': 7, 'H': 8, 'K': 9}
+
+
 class Piece:
     def __init__(self, pos, color, promoted=False):
+        self.value = None
+        self.name = None
         self.row = pos[0]
         self.col = pos[1]
         self.color = color

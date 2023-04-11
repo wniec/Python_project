@@ -2,6 +2,7 @@ import pieces
 from pieces import COLOR
 from itertools import product
 
+
 class Board:
     def __init__(self, size: int) -> None:
         """
@@ -13,7 +14,7 @@ class Board:
         self.grid = [[None for _ in range(size)] for _ in range(size)]
         self.active = ({}, {})
         self.captured = ({}, {})
-        self.kings = (None, None)
+        self.kings = [None, None]
         # first black, second white
 
     def setup(self) -> None:
@@ -177,7 +178,6 @@ class Board:
         self.grid[piece.row][piece.col] = None
         self.grid[new_position[0]][new_position[1]] = piece
         piece.place(new_position)
-
     def get_attacking(self, pos, attacking_color: COLOR) -> list:
         """
         Returns set of all `attacking_color` pieces which attack square at pos `position`.
@@ -261,28 +261,28 @@ class Board:
                 return False
 
         return True
-    def get_available_drops(self,piece):
+
+    def get_available_drops(self, piece):
         """
 
         returns all free positions on which player or bot can drop their piece on
         """
         free = set()
         match piece.name:
-            case 'P'|'L':
+            case 'P' | 'L':
                 possible_rows = {i for i in range(8)}
             case 'N':
                 possible_rows = {i for i in range(7)}
             case _:
                 possible_rows = {i for i in range(9)}
         possible_cols = set(i for i in range(9))
-        if piece.name =='P':
+        if piece.name == 'P':
             possible_cols.difference_update({pawn.col for pawn in self.active[piece.color] if not pawn.promoted})
         for x, in possible_rows:
             for y in possible_cols:
-                if self.grid[x][y] is not None and not self.is_checkmate(self.kings[piece.color.opposite()]) :
-                    free.add((x,y))
+                if self.grid[x][y] is not None and not self.is_checkmate(self.kings[piece.color.opposite()]):
+                    free.add((x, y))
         return free
-
 
     def show(self):
         print("   ", end="")
