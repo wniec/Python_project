@@ -12,7 +12,7 @@ class ValueMatrix:
 
     def __init__(self):
         self.valueMatrix = None
-        self.read()
+        self.generate_random()
 
     def generate_random(self):
         self.valueMatrix = np.random.random((10, 9, 9))

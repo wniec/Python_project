@@ -17,6 +17,7 @@ pieces_dict = {'P': 0, 'L': 1, 'N': 2, 'S': 3, 'G': 4, 'B': 5, 'R': 6, 'D': 7, '
 
 class Piece:
     def __init__(self, pos, color, promoted=False):
+        self.value_in_hand = None
         self.value = None
         self.name = None
         self.row = pos[0]
@@ -33,6 +34,12 @@ class Piece:
 
     def degrade(self):
         return Piece((self.row, self.col), self.color)
+
+    def pos(self):
+        return self.row, self.col
+
+    def __lt__(self, other):
+        return self.value < other.value
 
 
 class Pawn(Piece):
@@ -70,6 +77,7 @@ class King(Piece):
         ]
         self.value = 1000.00
         self.value_in_hand = -1000.00
+
 
 
 class Rook(Piece):

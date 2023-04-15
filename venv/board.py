@@ -139,7 +139,6 @@ class Board:
         Returns available squares to which `piece` can move.
         param Piece `piece`:
         """
-
         inbounds = lambda row, col: 0 <= row < self.size and 0 <= col < self.size
         available_pos = set()
 
@@ -168,8 +167,12 @@ class Board:
         @param Piece `piece`:
         @param (int, int) `new_position`: pair of integers specifing new position
         """
+        for key, val in self.captured[piece.color.value].items():
+            if val == piece:
+                self.drop(piece, new_position)
+                return
         if (
-                self.grid[new_position[0]][new_position[1]] != None
+                self.grid[new_position[0]][new_position[1]] is not None
                 and self.grid[new_position[0]][new_position[1]].color
                 == piece.color.opposite()
         ):
@@ -178,6 +181,25 @@ class Board:
         self.grid[piece.row][piece.col] = None
         self.grid[new_position[0]][new_position[1]] = piece
         piece.place(new_position)
+
+    def drop(self, piece: pieces.Piece, new_position) -> None:
+        """
+        Drops piece to new position i.e. changes its internal position `(piece.x, piece.y)` and
+        changes piece's position on the board stored in structures `self.grid` and `self.active`.
+        :param piece:
+        :param new_position:
+        """
+        self.grid[new_position[0]][new_position[1]] = piece
+        piece.place(new_position)
+        drop_key = None
+        for key, val in self.captured[piece.color.value].items():
+            if val == piece:
+                drop_key = key
+
+        self.active[piece.color.opposite().value][drop_key] = self.captured[
+            piece.color.value][drop_key]
+        del self.captured[piece.color.value][drop_key]
+
     def get_attacking(self, pos, attacking_color: COLOR) -> list:
         """
         Returns set of all `attacking_color` pieces which attack square at pos `position`.
@@ -204,8 +226,8 @@ class Board:
     def capture(self, capture_piece: pieces.Piece):
         """
         Deletes piece `capture_piece` from board (i.e. from structures `Board.grid` and
-        `Board.active`), degrades and adds it to structure `Board.captured`.
-        @param Piece `piece`:
+        `Board.active`) and adds it to structure `Board.captured`.
+        :param capture_piece:
         """
 
         capture_key = None
@@ -214,8 +236,7 @@ class Board:
                 capture_key = key
 
         self.captured[capture_piece.color.opposite().value][capture_key] = self.active[
-            capture_piece.color.value
-        ][capture_key].degrade()
+            capture_piece.color.value][capture_key]
 
         del self.active[capture_piece.color.value][capture_key]
 
@@ -276,11 +297,16 @@ class Board:
             case _:
                 possible_rows = {i for i in range(9)}
         possible_cols = set(i for i in range(9))
+        impossible_cols = set()
         if piece.name == 'P':
-            possible_cols.difference_update({pawn.col for pawn in self.active[piece.color] if not pawn.promoted})
-        for x, in possible_rows:
+            for piece_id in self.active[piece.color.value]:
+                if piece_id[0] == 'P':
+                    impossible_cols.add(self.active[piece.color.value][piece_id].col)
+        possible_cols.difference_update(impossible_cols)
+        king_x, king_y = self.kings[piece.color.opposite().value].pos()
+        for x in possible_rows:
             for y in possible_cols:
-                if self.grid[x][y] is not None and not self.is_checkmate(self.kings[piece.color.opposite()]):
+                if self.grid[x][y] is not None and not (king_x == x + piece.color.value * 2 - 1 and king_y == y):
                     free.add((x, y))
         return free
 
@@ -293,7 +319,7 @@ class Board:
         for row in range(self.size):
             print(row, " ", end="")
             for col in range(self.size):
-                if self.grid[row][col] != None:
+                if self.grid[row][col] is not None:
                     if self.grid[row][col].color == COLOR.BLACK:
                         print(
                             "\033[91m{}\033[0m".format(self.grid[row][col].name),

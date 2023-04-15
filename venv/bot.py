@@ -1,6 +1,7 @@
 import queue
 from pieces import COLOR
 import pieces
+from pieces import pieces_dict
 
 
 def change_grid(x, y, piece, grid):
@@ -15,12 +16,17 @@ class Bot:
         self.board = board
 
     def test_move(self, x: int, y: int, piece: pieces.Piece, grid: [[]]) -> int:
-        current_value = self.matrix.valueMatrix[self.matrix.Figures[piece.name], piece.row, piece.col]
+        current_value = self.matrix.valueMatrix[pieces_dict[piece.name], piece.row, piece.col]
         new_value = 0
         if grid[x][y] is not None and grid[x][y].color == piece.color.opposite():
             new_value = grid[x][y].value_in_hand
-        new_value += self.matrix.valueMatrix[self.matrix.Figures[piece.name], x, y]
+        new_value += self.matrix.valueMatrix[pieces_dict[piece.name], x, y]
         return (new_value - current_value) * piece.value
+
+    def test_drop(self, x: int, y: int, piece: pieces.Piece) -> int:
+        current_value = piece.value_in_hand
+        new_value = self.matrix.valueMatrix[pieces_dict[piece.name], x, y] * piece.value
+        return new_value - current_value
 
     def test_best_moves_depth1(self, color: pieces.COLOR, grid: list[list], n: int) -> list[tuple]:
         # side is 0 or 1 -depending on whose moves are we testing
@@ -37,9 +43,9 @@ class Bot:
         i = 0
         for piece_sign in self.board.captured[color.value]:
             piece = self.board.captured[color.value][piece_sign]
-            possible = self.board.get_free
+            possible = self.board.get_available_drops(piece)
             for x, y in possible:
-                move_result = self.test_move(x, y, piece, grid)
+                move_result = self.test_drop(x, y, piece)
                 best.put((-move_result, x, y, piece))
             i += 1
         i = 0
