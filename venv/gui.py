@@ -1,26 +1,27 @@
 """
-This code is only a prototype (aka HOT GARBAGE) and needs massive refactoring
+This code is only a prototype and needs massive refactoring
 """
 
 import pygame
 import math
 import board
-from pieces import COLOR
+import io
+import os
+import time
 from pygame import gfxdraw
+from pieces import COLOR
 
 pygame.init()
 
-BLACK = (0, 0, 0)
-BG_COLOR = (0, 102, 102)
-SQR_COLOR_1 = (194, 178, 128)
-SQR_COLOR_2 = (150, 111, 51)
-SQR_COLOR_3 = (124, 252, 0)
-
+BG_COLOR = (40, 40, 40)
+SQR_COLOR_1 = (235, 234, 221)
+SQR_COLOR_2 = (63, 90, 54)
+SQR_COLOR_HINT = (124, 252, 0)
 WINDOW_SIZE = (600, 600)
 BOARD_SIZE = (550, 550)
 
 window = pygame.display.set_mode(WINDOW_SIZE, pygame.RESIZABLE)
-pygame.display.set_caption("Shogi App")
+pygame.display.set_caption("Shogi Appl")
 
 # Initialize the board
 board_pos = (
@@ -30,15 +31,56 @@ board_pos = (
 board_width, board_height = BOARD_SIZE
 square_size = board_width // 9
 
-board = board.Board(9)
+board = board.Board()
 board.setup()
+board.who_starts("Black")
 
-for color in (COLOR.WHITE, COLOR.BLACK):
-    for piece_type in board.active[color.value].keys():
-        piece = board.active[color.value][piece_type]
-        piece.img = pygame.transform.smoothscale(piece.img, (square_size, square_size))
 
-dragging = False
+def load_and_scale_svg(filename, scale):
+    svg_string = open(filename, "rt").read()
+    start = svg_string.find("<svg")
+    if start > 0:
+        svg_string = (
+            svg_string[: start + 4]
+            + f' transform="scale({scale})"'
+            + svg_string[start + 4 :]
+        )
+    return pygame.image.load(io.BytesIO(svg_string.encode()))
+
+
+INIT_SCALE = 1.67
+INIT_SIZE = square_size
+prefix = "resources/international/"
+IMG_PATH_DICT = {
+    "P": (prefix + "0FU.svg", prefix + "1FU.svg"),
+    "L": (prefix + "0KY.svg", prefix + "1KY.svg"),
+    "N": (prefix + "0KE.svg", prefix + "1KE.svg"),
+    "S": (prefix + "0GI.svg", prefix + "1GI.svg"),
+    "G": (prefix + "0KI.svg", prefix + "1KI.svg"),
+    "B": (prefix + "0KA.svg", prefix + "1KA.svg"),
+    "R": (prefix + "0HI.svg", prefix + "1HI.svg"),
+    "D": (prefix + "0RY.svg", prefix + "1RY.svg"),
+    "H": (prefix + "0FU.svg", prefix + "1FU.svg"),
+    "K": (prefix + "0OU.svg", prefix + "1OU.svg"),
+}
+IMGS = {}
+
+
+def update_imgs():
+    for key in IMG_PATH_DICT.keys():
+        IMGS[key] = (
+            load_and_scale_svg(
+                IMG_PATH_DICT[key][COLOR.BLACK.value],
+                INIT_SCALE * square_size / INIT_SIZE,
+            ),
+            load_and_scale_svg(
+                IMG_PATH_DICT[key][COLOR.WHITE.value],
+                INIT_SCALE * square_size / INIT_SIZE,
+            ),
+        )
+
+
+update_imgs()
 
 
 def snap_to_grid(position):
@@ -66,17 +108,43 @@ def get_rowcol(x, y):
     return (row, col)
 
 
-active_piece = None
-active_piece_pos = None
-available_squares = None
+ACTIVE_PIECE = None
+ACTIVE_PIECE_POS = None
+AVAILABLE_SQRS = None
+DRAGGING = False
+
+CLK_STARTED = False
+FIRST_MOVED = False
+CLK_EVENT, DELTA_T = pygame.USEREVENT + 1, 1000
+pygame.time.set_timer(CLK_EVENT, DELTA_T)
 
 while True:
+    if not CLK_STARTED and FIRST_MOVED:
+        board.clock.switch_to(board.turn_color)
+        CLK_STARTED = True
 
     # Handle events
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             exit()
+
+        elif event.type == CLK_EVENT:
+            os.system("cls")
+            print("*" * 42)
+            print(
+                "Black time:",
+                time.strftime(
+                    "%H:%M:%S", time.gmtime(board.clock.get_time(COLOR.BLACK))
+                ),
+            )
+            print(
+                "White time:",
+                time.strftime(
+                    "%H:%M:%S", time.gmtime(board.clock.get_time(COLOR.WHITE))
+                ),
+            )
+            print("*" * 42)
 
         elif event.type == pygame.VIDEORESIZE:
             # Resize the window and recalculate the square size
@@ -91,52 +159,83 @@ while True:
                 (window.get_height() - board_height) // 2,
             )
 
+            update_imgs()
+
         elif event.type == pygame.MOUSEBUTTONDOWN:
             # Check if the piece is clicked
-            row, col = get_rowcol(event.pos[0], event.pos[1])
-            if board.grid[row][col] != None:
-                dragging = True
+            if (
+                board_pos[0] <= event.pos[0] <= board_pos[0] + board.size * square_size
+                and board_pos[1]
+                <= event.pos[1]
+                <= board_pos[1] + board.size * square_size
+            ):
+                row, col = get_rowcol(event.pos[0], event.pos[1])
+                if board.grid[row][col] != None:
+                    DRAGGING = True
 
-                active_piece = board.grid[row][col]
-                x, y = get_position(active_piece.row, active_piece.col)
-                active_piece_pos = (x, y)
-                available_squares = board.get_available(active_piece) | {
-                    (active_piece.row, active_piece.col)
-                }
+                    ACTIVE_PIECE = board.grid[row][col]
+                    x, y = get_position(ACTIVE_PIECE.row, ACTIVE_PIECE.col)
+                    ACTIVE_PIECE_POS = (x, y)
+                    AVAILABLE_SQRS = board.get_available(ACTIVE_PIECE) | {
+                        (ACTIVE_PIECE.row, ACTIVE_PIECE.col)
+                    }
 
-                mouse_offset = (
-                    active_piece_pos[0] - event.pos[0],
-                    active_piece_pos[1] - event.pos[1],
-                )
+                    mouse_offset = (
+                        ACTIVE_PIECE_POS[0] - event.pos[0],
+                        ACTIVE_PIECE_POS[1] - event.pos[1],
+                    )
 
         elif event.type == pygame.MOUSEBUTTONUP:
             # Release the piece and snap it to the nearest grid square
-            if dragging and get_rowcol(event.pos[0], event.pos[1]) in available_squares:
-                dragging = False
-                active_piece_pos = snap_to_grid(event.pos)
+            if (
+                DRAGGING
+                and get_rowcol(event.pos[0], event.pos[1])
+                in AVAILABLE_SQRS - {(ACTIVE_PIECE.row, ACTIVE_PIECE.col)}
+                and board_pos[0]
+                <= event.pos[0]
+                <= board_pos[0] + board.size * square_size
+                and board_pos[1]
+                <= event.pos[1]
+                <= board_pos[1] + board.size * square_size
+            ):
+                if not FIRST_MOVED:
+                    FIRST_MOVED = True
+                DRAGGING = False
+                ACTIVE_PIECE_POS = snap_to_grid(event.pos)
                 board.move(
-                    active_piece, get_rowcol(active_piece_pos[0], active_piece_pos[1])
+                    ACTIVE_PIECE, get_rowcol(ACTIVE_PIECE_POS[0], ACTIVE_PIECE_POS[1])
                 )
-                active_piece = None
-                active_piece_pos = None
+                ACTIVE_PIECE = None
+                ACTIVE_PIECE_POS = None
+
+                board.end_turn()
 
                 # ==============================================
-                print("Captured by WHITE", board.captured[COLOR.WHITE.value].keys())
-                print("Captured by BLACK", board.captured[COLOR.BLACK.value].keys())
+                # print("Captured by WHITE", board.captured[COLOR.WHITE.value].keys())
+                # print("Captured by BLACK", board.captured[COLOR.BLACK.value].keys())
                 # ==============================================
 
-            elif dragging:
-                dragging = False
-                active_piece_pos = snap_to_grid(event.pos)
-                active_piece = None
-                active_piece_pos = None
+            elif DRAGGING:
+                DRAGGING = False
+                ACTIVE_PIECE_POS = snap_to_grid(event.pos)
+                ACTIVE_PIECE = None
+                ACTIVE_PIECE_POS = None
 
-        elif event.type == pygame.MOUSEMOTION and dragging:
+        elif event.type == pygame.MOUSEMOTION:
+            if (
+                board_pos[0] <= event.pos[0] <= board_pos[0] + board.size * square_size
+                and board_pos[1]
+                <= event.pos[1]
+                <= board_pos[1] + board.size * square_size
+            ):
+                row, col = get_rowcol(event.pos[0], event.pos[1])
+
             # Move the piece with the mouse
-            active_piece_pos = (
-                event.pos[0] + mouse_offset[0],
-                event.pos[1] + mouse_offset[1],
-            )
+            if DRAGGING:
+                ACTIVE_PIECE_POS = (
+                    event.pos[0] + mouse_offset[0],
+                    event.pos[1] + mouse_offset[1],
+                )
 
     # Clear the window
     window.fill(BG_COLOR)
@@ -155,11 +254,33 @@ while True:
                     square_size,
                 ),
             )
-    if dragging:
-        for x, y in available_squares:
-            transparent_square = pygame.Surface((square_size, square_size))
+
+    # If dragging a piece draw available squares
+    if DRAGGING:
+        for x, y in AVAILABLE_SQRS:
+            transparent_square = pygame.Surface(
+                (square_size, square_size), pygame.SRCALPHA
+            )
             transparent_square.set_alpha(128)
-            transparent_square.fill(SQR_COLOR_3)
+
+            if board.grid[x][y] != None:
+                transparent_square.fill(SQR_COLOR_HINT)
+            else:
+                gfxdraw.aacircle(
+                    transparent_square,
+                    square_size // 2,
+                    square_size // 2,
+                    square_size // 7,
+                    SQR_COLOR_HINT,
+                )
+                gfxdraw.filled_circle(
+                    transparent_square,
+                    square_size // 2,
+                    square_size // 2,
+                    square_size // 7,
+                    SQR_COLOR_HINT,
+                )
+
             window.blit(
                 transparent_square,
                 (
@@ -171,18 +292,13 @@ while True:
     # Draw the pieces
     for row in range(board.size):
         for col in range(board.size):
-            if board.grid[row][col] != None and board.grid[row][col] != active_piece:
+            if board.grid[row][col] != None and board.grid[row][col] != ACTIVE_PIECE:
                 piece = board.grid[row][col]
-                piece.img = pygame.transform.smoothscale(
-                    piece.img, (square_size, square_size)
-                )
-                window.blit(piece.img, get_position(piece.row, piece.col))
+                window.blit(IMGS[piece.name][piece.color.value], get_position(row, col))
 
-    if dragging:
-        active_piece.img = pygame.transform.smoothscale(
-            active_piece.img, (square_size, square_size)
-        )
-        window.blit(active_piece.img, active_piece_pos)
+    # Draw active piece
+    if DRAGGING:
+        window.blit(IMGS[ACTIVE_PIECE.name][ACTIVE_PIECE.color.value], ACTIVE_PIECE_POS)
 
     # Update the display
     pygame.display.update()
