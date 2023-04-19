@@ -45,7 +45,8 @@ class Board:
     def __init__(self, size: int = 9, max_time=600) -> None:
         """
         Initializes `Board` object.
-        :param int `size`: size of the board i.e. board will be a grid with size x size squares.
+        :param int `size`: size of the board i.e. board will be a grid with size x size squares
+        :param int `max_time`: max time of game in seconds
         """
 
         self.size = size
@@ -157,7 +158,6 @@ class Board:
             return path
 
         elif row_diff == 0:  # Path is horizontal
-
             path = []
             col_step = 1 if col_diff > 0 else -1
             for i in range(1, abs(col_diff)):
@@ -165,7 +165,6 @@ class Board:
             return path
 
         elif col_diff == 0:  # Path is vertical
-
             path = []
             row_step = 1 if row_diff > 0 else -1
             for i in range(1, abs(row_diff)):
