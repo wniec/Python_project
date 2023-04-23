@@ -1,25 +1,26 @@
 import pygame
+import numpy as np
 
 
 class Sprite:
-    def __init__(self, array, size):
-        self.rgb_array = array
-        self.surface = None
-        self.size = None
+    def __init__(self, array: np.array, size: float):
+        self.rgb_array: np.array = array
+        self.surface: pygame.Surface = None
+        self.size: float = None
 
         self.render(size)
 
-    def render(self, size):
+    def render(self, size: float):
         """
-        Only supports square rendering i.e. self.rgb_array is a square matrix, size: float
+        Only supports square rendering i.e. self.rgb_array is a square matrix
         """
-        n_row, n_col = len(self.rgb_array), len(self.rgb_array[0])
-        pxl_size = size // n_row
-        padding = (abs((size / n_row) - size // n_row) * n_row) / 2
+        n = len(self.rgb_array)
+        pxl_size = size // n
+        padding = (abs((size / n) - pxl_size) * n) / 2
         surface = pygame.Surface((size, size), pygame.SRCALPHA)
 
-        for row in range(n_row):
-            for col in range(n_col):
+        for row in range(n):
+            for col in range(n):
                 if self.rgb_array[row][col][3] != 0:
                     pygame.draw.rect(
                         surface,
