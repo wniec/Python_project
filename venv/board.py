@@ -200,6 +200,7 @@ class Board:
         ):
             return set()
 
+
         inbounds = lambda row, col: 0 <= row < self.size and 0 <= col < self.size
         available_pos = set()
 
