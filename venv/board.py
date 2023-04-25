@@ -38,26 +38,28 @@ class Clock:
         if task == self.current_task:
             val -= self.elapsed()
 
-        return int(val)
+        return int(max(0, val))
 
 
 class Board:
-    def __init__(self, size: int = 9, max_time=600) -> None:
+    def __init__(self, size: int = 9, max_time=600, is_pvp=True) -> None:
         """
         Initializes `Board` object.
-        :param int `size`: size of the board i.e. board will be a grid with size x size squares.
+        :param int `size`: size of the board i.e. board will be a grid with size x size squares
+        :param int `max_time`: max time of game in seconds
         """
 
         self.size = size
         self.grid = [[None for _ in range(size)] for _ in range(size)]
+        self.clock = Clock(max_time)
 
+        # first black, second white
         self.active = ({}, {})
         self.captured = ({}, {})
         self.kings = [None, None]
-        # first black, second white
 
-        self.turn_color = COLOR.BLACK
-        self.clock = Clock(max_time)
+        self.turn_color = None
+        self.is_pvp = is_pvp
 
     def who_starts(self, option="Black"):
         match option:
@@ -141,8 +143,9 @@ class Board:
     def get_path(self, pos1, pos2) -> list:
         """
         Returns diagonal, horizontal or vertical path if such exists between two squares at
-        positions pos1 and pos2. :param (int,int) pos1: position of first square :param (int,int)
-        pos2: position of second square
+        positions `pos1` and `pos2`.
+        :param (int,int) `pos1`: position of first square
+        :param (int,int) `pos2`: position of second square
         """
 
         row_diff = pos2[0] - pos1[0]
@@ -157,7 +160,6 @@ class Board:
             return path
 
         elif row_diff == 0:  # Path is horizontal
-
             path = []
             col_step = 1 if col_diff > 0 else -1
             for i in range(1, abs(col_diff)):
@@ -165,7 +167,6 @@ class Board:
             return path
 
         elif col_diff == 0:  # Path is vertical
-
             path = []
             row_step = 1 if row_diff > 0 else -1
             for i in range(1, abs(row_diff)):
@@ -176,8 +177,9 @@ class Board:
 
     def is_blocked(self, pos, piece: pieces.Piece) -> bool:
         """
-        Checks whether `piece` has a line of sight to square at position `pos`. :param (int,int)
-        `pos`: position of a square :param Piece `piece`:
+        Checks whether `piece` has a line of sight to square at position `pos`.
+        :param (int,int) `pos`: position of a square
+        :param Piece `piece`:
         """
 
         path = self.get_path((piece.row, piece.col), pos)
@@ -193,7 +195,9 @@ class Board:
         Returns available squares to which `piece` can move.
         :param Piece `piece`:
         """
-        if piece.color != self.turn_color:
+        if piece.color != self.turn_color or (
+            not self.is_pvp and piece.color == COLOR.WHITE
+        ):
             return set()
 
         inbounds = lambda row, col: 0 <= row < self.size and 0 <= col < self.size
@@ -215,13 +219,35 @@ class Board:
             ):
                 available_pos.add((row, col))
 
+        if self.is_check(piece.color):
+            available_pos_new = set()
+            king = self.kings[piece.color.value]
+            attackers = self.get_attacking((king.row, king.col), king.color.opposite())
+
+            if piece == king:
+                for pos in available_pos:
+                    if len(self.get_attacking(pos, piece.color.opposite())) == 0:
+                        available_pos_new.add(pos)
+                return available_pos_new
+
+            if len(attackers) > 1:
+                return set()
+            else:
+                attacker = attackers[0]
+                for pos in available_pos:
+                    if pos == (attacker.row, attacker.col) or pos in self.get_path(
+                        (attacker.row, attacker.col), (king.row, king.col)
+                    ):
+                        available_pos_new.add(pos)
+                return available_pos_new
+
         return available_pos
 
     def get_attacking(self, pos, attacking_color: COLOR) -> list:
         """
         Returns set of all `attacking_color` pieces which attack square at pos `position`.
         :param (int,int) `pos`: position of square
-        :param COLOR `attacking_color`: color of attackingpieces
+        :param COLOR `attacking_color`: color of attacking pieces
         """
 
         attack_pieces = []
@@ -235,7 +261,9 @@ class Board:
                     row, col = attack_piece.row + move[0], attack_piece.col + move[1]
                 else:
                     row, col = attack_piece.row - move[0], attack_piece.col - move[1]
-                positions.add((row, col))
+
+                if row != attack_piece.row or col != attack_piece.col:
+                    positions.add((row, col))
 
             if pos in positions and not self.is_blocked(pos, attack_piece):
                 attack_pieces.append(attack_piece)
@@ -301,7 +329,7 @@ class Board:
 
         del self.active[color.value][capture_key]
 
-    # Fix handle check: for every piece available moves should only be the ones that stop the check
+    # Fix handle check in get_available()
 
     def is_check(self, color):
         king = self.kings[color.value]
@@ -345,7 +373,9 @@ class Board:
         # Check if any piece can capture the attacking piece
         if len(attackers) == 1:
             attacker = attackers[0]
-            defenders = self.get_attacking((attacker.row, attacker.col), king.color)
+            defenders = set(
+                self.get_attacking((attacker.row, attacker.col), king.color)
+            ) - {king}
 
             if len(defenders) > 0:
                 return False
