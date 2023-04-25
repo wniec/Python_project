@@ -104,15 +104,15 @@ class Board:
             self.grid[row][7] = knight_r
             self.grid[row][8] = lance_r
 
-            self.active[color.value]["L1"] = lance_l
-            self.active[color.value]["L2"] = lance_r
-            self.active[color.value]["N1"] = knight_l
-            self.active[color.value]["N2"] = knight_r
-            self.active[color.value]["S1"] = silver_l
-            self.active[color.value]["S2"] = silver_r
-            self.active[color.value]["G1"] = gold_l
-            self.active[color.value]["G2"] = gold_r
-            self.active[color.value]["K"] = king
+            self.active[color.value]["L1" + str(color.value)] = lance_l
+            self.active[color.value]["L2" + str(color.value)] = lance_r
+            self.active[color.value]["N1" + str(color.value)] = knight_l
+            self.active[color.value]["N2" + str(color.value)] = knight_r
+            self.active[color.value]["S1" + str(color.value)] = silver_l
+            self.active[color.value]["S2" + str(color.value)] = silver_r
+            self.active[color.value]["G1" + str(color.value)] = gold_l
+            self.active[color.value]["G2" + str(color.value)] = gold_r
+            self.active[color.value]["K" + str(color.value)] = king
 
             self.kings[color.value] = king
 
@@ -128,8 +128,8 @@ class Board:
             self.grid[row][bishop.col] = bishop
             self.grid[row][rook.col] = rook
 
-            self.active[color.value]["B"] = bishop
-            self.active[color.value]["R"] = rook
+            self.active[color.value]["B" + str(color.value)] = bishop
+            self.active[color.value]["R" + str(color.value)] = rook
 
         # Set third ranks
         for row in (2, self.size - 3):
@@ -138,7 +138,7 @@ class Board:
             for col in range(self.size):
                 piece = pieces.Pawn(pos=(row, col), color=color)
                 self.grid[row][col] = piece
-                self.active[color.value]["P{}".format(col)] = piece
+                self.active[color.value]["P{}".format(col) + str(color.value)] = piece
 
     def get_path(self, pos1, pos2) -> list:
         """
@@ -190,16 +190,15 @@ class Board:
 
         return False
 
-    def get_available(self, piece: pieces.Piece) -> set:
+    def get_available(self, piece: pieces.Piece, is_bot=False) -> set:
         """
         Returns available squares to which `piece` can move.
-        :param Piece `piece`:
+        :param piece:
+        :param is_bot:
+        getting moves of opposite color is inevitable for checking opposite moves in bot
         """
-        if piece.color != self.turn_color or (
-            not self.is_pvp and piece.color == COLOR.WHITE
-        ):
+        if piece.color != self.turn_color and not is_bot:
             return set()
-
 
         inbounds = lambda row, col: 0 <= row < self.size and 0 <= col < self.size
         available_pos = set()
@@ -211,12 +210,12 @@ class Board:
                 row, col = piece.row - move[0], piece.col - move[1]
 
             if (
-                inbounds(row, col)
-                and not self.is_blocked((row, col), piece)
-                and (
+                    inbounds(row, col)
+                    and not self.is_blocked((row, col), piece)
+                    and (
                     self.grid[row][col] is None
                     or self.grid[row][col].color != piece.color
-                )
+            )
             ):
                 available_pos.add((row, col))
 
@@ -237,7 +236,7 @@ class Board:
                 attacker = attackers[0]
                 for pos in available_pos:
                     if pos == (attacker.row, attacker.col) or pos in self.get_path(
-                        (attacker.row, attacker.col), (king.row, king.col)
+                            (attacker.row, attacker.col), (king.row, king.col)
                     ):
                         available_pos_new.add(pos)
                 return available_pos_new
@@ -284,9 +283,9 @@ class Board:
                 self.drop(piece, new_position)
                 return
         if (
-            self.grid[new_position[0]][new_position[1]] is not None
-            and self.grid[new_position[0]][new_position[1]].color
-            == piece.color.opposite()
+                self.grid[new_position[0]][new_position[1]] is not None
+                and self.grid[new_position[0]][new_position[1]].color
+                == piece.color.opposite()
         ):
             self.capture(self.grid[new_position[0]][new_position[1]])
 
@@ -301,17 +300,16 @@ class Board:
         :param piece:
         :param new_position:
         """
-        self.grid[new_position[0]][new_position[1]] = piece
         piece.place(new_position)
+        piece.color = piece.color.opposite()
         drop_key = None
         for key, val in self.captured[piece.color.value].items():
-            if val == piece:
+            if val is piece:
                 drop_key = key
-
-        self.active[piece.color.opposite().value][drop_key] = self.captured[
-            piece.color.value
-        ][drop_key]
+        self.active[piece.color.value][drop_key] = self.captured[
+            piece.color.value][drop_key]
         del self.captured[piece.color.value][drop_key]
+        self.grid[new_position[0]][new_position[1]] = piece
 
     def capture(self, captured_piece: pieces.Piece):
         """
@@ -383,11 +381,13 @@ class Board:
 
         return True
 
-    def get_available_drops(self, piece):
+    def get_available_drops(self, piece, is_bot=False):
         """
 
         returns all free positions on which player or bot can drop their piece on
         """
+        if piece.color == self.turn_color and not is_bot:
+            return set()
         free = set()
         match piece.name:
             case "P" | "L":
@@ -407,7 +407,7 @@ class Board:
         for x in possible_rows:
             for y in possible_cols:
                 if self.grid[x][y] is not None and not (
-                    king_x == x + piece.color.value * 2 - 1 and king_y == y
+                        king_x == x + piece.color.value * 2 - 1 and king_y == y
                 ):
                     free.add((x, y))
         return free

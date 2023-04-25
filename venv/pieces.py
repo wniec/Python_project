@@ -43,7 +43,7 @@ class Piece:
         pass
 
     def degrade(self):
-        return Piece((self.row, self.col), self.color)
+        pass
 
     def pos(self):
         return self.row, self.col
@@ -57,7 +57,7 @@ class Pawn(Piece):
         super().__init__(pos, color, promoted)
         self.name = "P"
         self.moves = [(1, 0)]
-        self.value = 1.0
+        self.value = 1.00
         self.value_in_hand = 1.15
 
     def promote(self):
@@ -65,6 +65,11 @@ class Pawn(Piece):
         self.moves = GoldenGeneral.moves
         self.value = 4.20
         self.promoted = True
+
+    def degrade(self):
+        self.value = 1.00
+        self.moves = [(1, 0)]
+        self.name = 'P'
 
 
 class King(Piece):
@@ -82,7 +87,7 @@ class King(Piece):
             (-1, 1),
         ]
         self.value = 1000.00
-        self.value_in_hand = -1000.00
+        self.value_in_hand = 1000.00
 
 
 class Rook(Piece):
@@ -90,10 +95,10 @@ class Rook(Piece):
         super().__init__(pos, color, promoted)
         self.name = "R"
         self.moves = (
-            [(i, 0) for i in range(8)]
-            + [(-i, 0) for i in range(8)]
-            + [(0, i) for i in range(8)]
-            + [(0, -i) for i in range(8)]
+                [(i, 0) for i in range(8)]
+                + [(-i, 0) for i in range(8)]
+                + [(0, i) for i in range(8)]
+                + [(0, -i) for i in range(8)]
         )
         self.value = 10.40
         self.value_in_hand = 12.70
@@ -104,16 +109,26 @@ class Rook(Piece):
         self.promoted = True
         self.name = "D"
 
+    def degrade(self):
+        self.value = 10.40
+        self.moves = (
+                [(i, 0) for i in range(8)]
+                + [(-i, 0) for i in range(8)]
+                + [(0, i) for i in range(8)]
+                + [(0, -i) for i in range(8)]
+        )
+        self.name = 'R'
+
 
 class Bishop(Piece):
     def __init__(self, pos, color, promoted=False):
         super().__init__(pos, color, promoted)
         self.name = "B"
         self.moves = (
-            [(i, i) for i in range(8)]
-            + [(-i, -i) for i in range(8)]
-            + [(-i, i) for i in range(8)]
-            + [(i, -i) for i in range(8)]
+                [(i, i) for i in range(8)]
+                + [(-i, -i) for i in range(8)]
+                + [(-i, i) for i in range(8)]
+                + [(i, -i) for i in range(8)]
         )
         self.value = 8.90
         self.value_in_hand = 11.10
@@ -123,6 +138,16 @@ class Bishop(Piece):
         self.value = 11.50
         self.promoted = True
         self.name = "H"
+
+    def degrade(self):
+        self.value = 8.90
+        self.moves = (
+                [(i, i) for i in range(8)]
+                + [(-i, -i) for i in range(8)]
+                + [(-i, i) for i in range(8)]
+                + [(i, -i) for i in range(8)]
+        )
+        self.name = 'B'
 
 
 class Gold(Piece):
@@ -148,6 +173,11 @@ class Silver(Piece):
         self.value = 6.70
         self.promoted = True
 
+    def degrade(self):
+        self.value = 6.40
+        self.moves = [(1, 0), (1, 1), (1, -1), (-1, 1), (-1, -1)]
+        self.name = 'S'
+
 
 class Knight(Piece):
     def __init__(self, pos, color, promoted=False):
@@ -162,6 +192,11 @@ class Knight(Piece):
         self.moves = GoldenGeneral.moves
         self.value = 6.40
         self.promoted = True
+
+    def degrade(self):
+        self.value = 4.50
+        self.moves = [(2, 1), (2, -1)]
+        self.name = 'N'
 
 
 class Lance(Piece):
@@ -178,32 +213,37 @@ class Lance(Piece):
         self.value = 6.30
         self.promoted = True
 
+    def degrade(self):
+        self.value = 4.30
+        self.moves = [(i, 0) for i in range(8)]
+        self.name = 'L'
+
 
 class Dragon:
     moves = (
-        [(i, 0) for i in range(8)]
-        + [(-i, 0) for i in range(8)]
-        + [(0, i) for i in range(8)]
-        + [(0, -i) for i in range(8)]
-        + [(1, 1), (-1, 1), (-1, -1), (-1, -1)]
+            [(i, 0) for i in range(8)]
+            + [(-i, 0) for i in range(8)]
+            + [(0, i) for i in range(8)]
+            + [(0, -i) for i in range(8)]
+            + [(1, 1), (-1, 1), (-1, -1), (-1, -1)]
     )
 
 
 class Horse:
     moves = (
-        [(i, i) for i in range(8)]
-        + [(-i, -i) for i in range(8)]
-        + [(-i, i) for i in range(8)]
-        + [(i, -i) for i in range(8)]
-        + [(1, 0), (0, 1), (-1, 0), (0, -1)]
+            [(i, i) for i in range(8)]
+            + [(-i, -i) for i in range(8)]
+            + [(-i, i) for i in range(8)]
+            + [(i, -i) for i in range(8)]
+            + [(1, 0), (0, 1), (-1, 0), (0, -1)]
     )
 
 
 class GoldenGeneral:
     moves = (
-        [(i, i) for i in range(8)]
-        + [(-i, -i) for i in range(8)]
-        + [(-i, i) for i in range(8)]
-        + [(i, -i) for i in range(8)]
-        + [(1, 0), (0, 1), (-1, 0), (0, -1)]
+            [(i, i) for i in range(8)]
+            + [(-i, -i) for i in range(8)]
+            + [(-i, i) for i in range(8)]
+            + [(i, -i) for i in range(8)]
+            + [(1, 0), (0, 1), (-1, 0), (0, -1)]
     )
