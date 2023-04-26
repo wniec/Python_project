@@ -1,6 +1,5 @@
 import pieces
 from pieces import COLOR
-from itertools import product
 from random import randint
 import time
 
@@ -222,7 +221,7 @@ class Board:
         if self.is_check(piece.color):
             available_pos_new = set()
             king = self.kings[piece.color.value]
-            attackers = self.get_attacking((king.row, king.col), king.color.opposite())
+            attackers = self.get_attacking(king.pos(), king.color.opposite())
 
             if piece == king:
                 for pos in available_pos:
@@ -278,7 +277,7 @@ class Board:
         :param (int, int) `new_position`: pair of integers specifing new position
         """
 
-        for key, val in self.captured[piece.color.value].items():
+        for key, val in self.captured[piece.color.opposite().value].items():
             if val == piece:
                 self.drop(piece, new_position)
                 return
@@ -293,6 +292,33 @@ class Board:
         self.grid[new_position[0]][new_position[1]] = piece
         piece.place(new_position)
 
+    def revert_move(self, piece: pieces.Piece, captured: pieces.Piece, old_position:(int,int)) -> None:
+        if captured is not None:
+            if captured.color == piece.color:
+                raise ValueError
+            captured.place(piece.pos())
+            captured_key = None
+            for key, val in self.captured[piece.color.value].items():
+                if val is captured:
+                    captured_key = key
+            self.active[piece.color.opposite().value][captured_key] = captured
+            del self.captured[piece.color.value][captured_key]
+            captured.color = piece.color.opposite()
+        self.grid[piece.row][piece.col] = captured
+        self.grid[old_position[0]][old_position[1]] = piece
+        piece.place(old_position)
+
+    def revert_drop(self, piece: pieces.Piece) -> None:
+        x, y = piece.pos()
+        self.grid[x][y] = None
+        undrop_key = None
+        for key, val in self.active[piece.color.value].items():
+            if val is piece:
+                undrop_key = key
+        self.captured[piece.color.value][undrop_key] = piece
+        del self.active[piece.color.value][undrop_key]
+        piece.color = piece.color.opposite()
+
     def drop(self, piece: pieces.Piece, new_position) -> None:
         """
         Drops piece to new position i.e. changes its internal position `(piece.x, piece.y)` and
@@ -302,6 +328,8 @@ class Board:
         """
         piece.place(new_position)
         piece.color = piece.color.opposite()
+        if self.grid[new_position[0]][new_position[1]] is not None:
+            raise ValueError
         drop_key = None
         for key, val in self.captured[piece.color.value].items():
             if val is piece:
@@ -317,7 +345,6 @@ class Board:
         `Board.active`) and adds it to structure `Board.captured`.
         :param `captured_piece`:
         """
-
         capture_key = None
         for key, piece in self.active[captured_piece.color.value].items():
             if piece == captured_piece:
@@ -382,32 +409,36 @@ class Board:
         return True
 
     def get_available_drops(self, piece, is_bot=False):
-        """
-
-        returns all free positions on which player or bot can drop their piece on
-        """
-        if piece.color == self.turn_color and not is_bot:
+        """returns all free positions on which player or bot can drop their piece on"""
+        color = piece.color.opposite()
+        if color != self.turn_color and not is_bot:
             return set()
         free = set()
-        match piece.name:
-            case "P" | "L":
-                possible_rows = {i for i in range(8)}
-            case "N":
-                possible_rows = {i for i in range(7)}
-            case _:
-                possible_rows = {i for i in range(9)}
+        possible_rows = {i for i in range(9)}
+        if color == COLOR.BLACK:
+            match piece.name:
+                case "P" | "L":
+                    possible_rows = {i for i in range(8)}
+                case "N":
+                    possible_rows = {i for i in range(7)}
+        else:
+            match piece.name:
+                case "P" | "L":
+                    possible_rows = {i for i in range(1, 9)}
+                case "N":
+                    possible_rows = {i for i in range(2, 9)}
         possible_cols = set(i for i in range(9))
         impossible_cols = set()
         if piece.name == "P":
-            for piece_id in self.active[piece.color.value]:
-                if piece_id[0] == "P":
-                    impossible_cols.add(self.active[piece.color.value][piece_id].col)
+            for key, val in self.active[color.value].items():
+                if val.name == "P":
+                    impossible_cols.add(val.col)
         possible_cols.difference_update(impossible_cols)
-        king_x, king_y = self.kings[piece.color.opposite().value].pos()
+        king_x, king_y = self.kings[color.opposite().value].pos()
         for x in possible_rows:
             for y in possible_cols:
-                if self.grid[x][y] is not None and not (
-                        king_x == x + piece.color.value * 2 - 1 and king_y == y
+                if self.grid[x][y] is None and not (
+                        king_x == x + color.value * 2 - 1 and king_y == y
                 ):
                     free.add((x, y))
         return free
@@ -434,9 +465,9 @@ class Board:
                     print("·", " ", end="")
             print()
 
-    def evaluate(self):
-        side_0 = sum([self.captured[0][piece].value for piece in self.captured[0]])
-        side_0 += sum([self.active[0][piece].value for piece in self.active[0]])
-        side_1 = sum([self.captured[1][piece].value for piece in self.captured[1]])
-        side_1 += sum([self.active[1][piece].value for piece in self.active[1]])
-        return side_0, side_1
+    def evaluate(self, color: COLOR):
+        side_0 = sum([self.captured[color.value][piece].value for piece in self.captured[color.value]])
+        side_0 += sum([self.active[color.value][piece].value for piece in self.active[color.value]])
+        side_1 = sum([self.captured[color.opposite().value][piece].value for piece in self.captured[color.opposite().value]])
+        side_1 += sum([self.active[color.opposite().value][piece].value for piece in self.active[color.opposite().value]])
+        return side_0 - side_1
