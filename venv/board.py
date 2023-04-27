@@ -1,3 +1,5 @@
+import os
+
 import pieces
 from pieces import COLOR
 from random import randint
@@ -444,6 +446,7 @@ class Board:
         return free
 
     def show(self):
+        os.system('cls')
         print("   ", end="")
         for col in range(self.size):
             print(col, " ", end="")
@@ -464,10 +467,3 @@ class Board:
                 else:
                     print("·", " ", end="")
             print()
-
-    def evaluate(self, color: COLOR):
-        side_0 = sum([self.captured[color.value][piece].value for piece in self.captured[color.value]])
-        side_0 += sum([self.active[color.value][piece].value for piece in self.active[color.value]])
-        side_1 = sum([self.captured[color.opposite().value][piece].value for piece in self.captured[color.opposite().value]])
-        side_1 += sum([self.active[color.opposite().value][piece].value for piece in self.active[color.opposite().value]])
-        return side_0 - side_1
