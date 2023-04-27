@@ -64,19 +64,23 @@ class Bot:
             piece = self.board.active[color.value][piece_sign]
             possible = self.board.get_available(piece, True)
             for x, y in possible:
-                best.put((-self.test_move(piece, x, y), x, y, piece, False))\
+                if piece.can_promote(x):
+                    piece.promote()
+                    best.put((-self.test_move(piece, x, y), x, y, piece, False, True))
+                    piece.degrade()
+                best.put((-self.test_move(piece, x, y), x, y, piece, False, False))
 
         for piece_sign in list(self.board.captured[color.value]):
             piece = self.board.captured[color.value][piece_sign]
             possible = self.board.get_available_drops(piece, True)
             for x, y in possible:
-                best.put((-self.test_drop(piece, x, y), x, y, piece, True))
+                best.put((-self.test_drop(piece, x, y), x, y, piece, True, False))
         i = 0
         while i < self.width and not best.empty():
             move = best.get()
-            negative_value, x, y, piece, dropped = move
+            negative_value, x, y, piece, dropped, promoted = move
             if negative_value is not float("inf"):
-                result.append((-negative_value, x, y, piece, dropped))
+                result.append((-negative_value, x, y, piece, dropped, promoted))
             i += 1
         # returns up to n best moves
         # checking all would take too long
@@ -97,17 +101,20 @@ class Bot:
             best_move = None
             worst_move_val = -float("inf")
             for move in potential_moves:
-                value, x, y, piece, dropped = move
+                value, x, y, piece, dropped, promoted = move
                 old_pos = piece.pos()
                 captured = self.board.grid[x][y]
-                self.board.move(piece, (x, y))
-                opposite_move = self.test_best_moves(color.opposite(), depth - 1)
-                if not dropped:
-                    self.board.revert_move(piece, captured, old_pos)
+                if dropped:
+                    self.board.drop(piece, (x, y))
                 else:
+                    self.board.move(piece, (x, y))
+                opposite_move = self.test_best_moves(color.opposite(), depth - 1)
+                if dropped:
                     self.board.revert_drop(piece)
+                else:
+                    self.board.revert_move(piece, captured, old_pos)
                 if opposite_move is not None and -opposite_move[0] > worst_move_val:
-                    best_move = (-opposite_move[0], x, y, piece, dropped)
+                    best_move = (-opposite_move[0], x, y, piece, dropped, promoted)
                     worst_move_val = -opposite_move[0]
             return best_move
 
@@ -119,7 +126,9 @@ class Bot:
             move = self.test_best_moves(COLOR.WHITE, self.depth)
             if move is None or self.board.is_checkmate(COLOR.WHITE):
                 return COLOR.BLACK
-            _, x, y, piece, dropped = move
+            _, x, y, piece, dropped, promoted = move
+            if promoted:
+                piece.promote()
             if dropped:
                 self.board.drop(piece, (x, y))
             else:
@@ -130,7 +139,9 @@ class Bot:
             move = bot.test_best_moves(COLOR.BLACK, bot.depth)
             if move is None or self.board.is_checkmate(COLOR.BLACK):
                 return COLOR.WHITE
-            _, x, y, piece, dropped = move
+            _, x, y, piece, dropped, promoted = move
+            if promoted:
+                piece.promote()
             if dropped:
                 self.board.drop(piece, (x, y))
             else:
@@ -139,8 +150,8 @@ class Bot:
             self.board.show()
             time.sleep(0.2)
             i += 1
-        side1, side2 = self.board.evaluate()
-        return COLOR.WHITE if side1 < side2 else COLOR.BLACK
+        result = self.evaluate(COLOR.WHITE)
+        return COLOR.WHITE if result > 0 else COLOR.BLACK
 
 
 b = Board(9)

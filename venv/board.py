@@ -278,11 +278,6 @@ class Board:
         :param Piece `piece`:
         :param (int, int) `new_position`: pair of integers specifing new position
         """
-
-        for key, val in self.captured[piece.color.opposite().value].items():
-            if val == piece:
-                self.drop(piece, new_position)
-                return
         if (
                 self.grid[new_position[0]][new_position[1]] is not None
                 and self.grid[new_position[0]][new_position[1]].color
@@ -328,6 +323,7 @@ class Board:
         :param piece:
         :param new_position:
         """
+        piece.degrade()
         piece.place(new_position)
         piece.color = piece.color.opposite()
         if self.grid[new_position[0]][new_position[1]] is not None:
@@ -420,15 +416,15 @@ class Board:
         if color == COLOR.BLACK:
             match piece.name:
                 case "P" | "L":
-                    possible_rows = {i for i in range(8)}
+                    possible_rows = {i for i in range(1,9)}
                 case "N":
-                    possible_rows = {i for i in range(7)}
+                    possible_rows = {i for i in range(2,9)}
         else:
             match piece.name:
                 case "P" | "L":
-                    possible_rows = {i for i in range(1, 9)}
+                    possible_rows = {i for i in range(8)}
                 case "N":
-                    possible_rows = {i for i in range(2, 9)}
+                    possible_rows = {i for i in range(7)}
         possible_cols = set(i for i in range(9))
         impossible_cols = set()
         if piece.name == "P":

@@ -39,6 +39,13 @@ class Piece:
         self.row = new_position[0]
         self.col = new_position[1]
 
+    def can_promote(self, row):
+        if self.name in {'G', 'D', 'H', 'K'} or self.promoted:
+            return False
+        if self.color == COLOR.WHITE and row > 6 or self.color == COLOR.BLACK and row < 3:
+            return True
+        return False
+
     def promote(self):
         pass
 
@@ -70,6 +77,7 @@ class Pawn(Piece):
         self.value = 1.00
         self.moves = [(1, 0)]
         self.name = 'P'
+        self.promoted = False
 
 
 class King(Piece):
@@ -118,6 +126,7 @@ class Rook(Piece):
                 + [(0, -i) for i in range(8)]
         )
         self.name = 'R'
+        self.promoted = False
 
 
 class Bishop(Piece):
@@ -148,6 +157,7 @@ class Bishop(Piece):
                 + [(i, -i) for i in range(8)]
         )
         self.name = 'B'
+        self.promoted = False
 
 
 class Gold(Piece):
@@ -177,6 +187,7 @@ class Silver(Piece):
         self.value = 6.40
         self.moves = [(1, 0), (1, 1), (1, -1), (-1, 1), (-1, -1)]
         self.name = 'S'
+        self.promoted = False
 
 
 class Knight(Piece):
@@ -197,6 +208,7 @@ class Knight(Piece):
         self.value = 4.50
         self.moves = [(2, 1), (2, -1)]
         self.name = 'N'
+        self.promoted = False
 
 
 class Lance(Piece):
@@ -217,6 +229,7 @@ class Lance(Piece):
         self.value = 4.30
         self.moves = [(i, 0) for i in range(8)]
         self.name = 'L'
+        self.promoted = False
 
 
 class Dragon:
@@ -240,10 +253,4 @@ class Horse:
 
 
 class GoldenGeneral:
-    moves = (
-            [(i, i) for i in range(8)]
-            + [(-i, -i) for i in range(8)]
-            + [(-i, i) for i in range(8)]
-            + [(i, -i) for i in range(8)]
-            + [(1, 0), (0, 1), (-1, 0), (0, -1)]
-    )
+    moves = [(1, 0), (1, 1), (1, -1), (0, 1), (0, -1), (-1, 0)]
