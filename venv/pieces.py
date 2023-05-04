@@ -40,9 +40,9 @@ class Piece:
         self.col = new_position[1]
 
     def can_promote(self, row):
-        if self.name in {'G', 'D', 'H', 'K'} or self.promoted:
+        if self.name in {"G", "D", "H", "K"} or self.promoted:
             return False
-        if self.color == COLOR.WHITE and row > 6 or self.color == COLOR.BLACK and row < 3:
+        elif (self.color == COLOR.WHITE and row > 6) or (self.color == COLOR.BLACK and row < 3):
             return True
         return False
 
@@ -76,7 +76,7 @@ class Pawn(Piece):
     def degrade(self):
         self.value = 1.00
         self.moves = [(1, 0)]
-        self.name = 'P'
+        self.name = "P"
         self.promoted = False
 
 
@@ -125,7 +125,7 @@ class Rook(Piece):
                 + [(0, i) for i in range(8)]
                 + [(0, -i) for i in range(8)]
         )
-        self.name = 'R'
+        self.name = "R"
         self.promoted = False
 
 
@@ -156,7 +156,7 @@ class Bishop(Piece):
                 + [(-i, i) for i in range(8)]
                 + [(i, -i) for i in range(8)]
         )
-        self.name = 'B'
+        self.name = "B"
         self.promoted = False
 
 

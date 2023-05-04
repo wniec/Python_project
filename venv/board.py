@@ -179,8 +179,8 @@ class Board:
     def is_blocked(self, pos, piece: pieces.Piece) -> bool:
         """
         Checks whether `piece` has a line of sight to square at position `pos`.
-        :param (int,int) `pos`: position of a square
-        :param Piece `piece`:
+        :param piece:
+        :param (int,int) pos: position of a square
         """
 
         path = self.get_path((piece.row, piece.col), pos)
@@ -244,11 +244,11 @@ class Board:
 
         return available_pos
 
-    def get_attacking(self, pos, attacking_color: COLOR) -> list:
+    def get_attacking(self, pos: (int,int), attacking_color: COLOR) -> list:
         """
-        Returns set of all `attacking_color` pieces which attack square at pos `position`.
-        :param (int,int) `pos`: position of square
-        :param COLOR `attacking_color`: color of attacking pieces
+        Returns set of all `attacking_color` pieces which attack square at pos `position`
+        :param attacking_color: color of attacking pieces
+        :param pos: position of square
         """
 
         attack_pieces = []
@@ -271,12 +271,12 @@ class Board:
 
         return attack_pieces
 
-    def move(self, piece: pieces.Piece, new_position) -> None:
+    def move(self, piece: pieces.Piece, new_position: (int, int)) -> None:
         """
         Moves piece to new position i.e. changes its internal position `(piece.x, piece.y)` and
         changes piece's position on the board stored in structures `self.grid` and `self.active`.
-        :param Piece `piece`:
-        :param (int, int) `new_position`: pair of integers specifing new position
+        :param piece:
+        :param new_position: a pair of integers specifying new position
         """
         if (
                 self.grid[new_position[0]][new_position[1]] is not None
@@ -289,10 +289,12 @@ class Board:
         self.grid[new_position[0]][new_position[1]] = piece
         piece.place(new_position)
 
-    def revert_move(self, piece: pieces.Piece, captured: pieces.Piece, old_position:(int,int)) -> None:
+    def revert_move(self, piece: pieces.Piece, captured: pieces.Piece, old_position: (int, int), was_promoted: bool) -> None:
         if captured is not None:
             if captured.color == piece.color:
                 raise ValueError
+            if was_promoted:
+                captured.promote()
             captured.place(piece.pos())
             captured_key = None
             for key, val in self.captured[piece.color.value].items():
@@ -341,7 +343,7 @@ class Board:
         """
         Deletes piece `captured_piece` from board (i.e. from structures `Board.grid` and
         `Board.active`) and adds it to structure `Board.captured`.
-        :param `captured_piece`:
+        :param captured_piece:
         """
         capture_key = None
         for key, piece in self.active[captured_piece.color.value].items():
@@ -416,9 +418,9 @@ class Board:
         if color == COLOR.BLACK:
             match piece.name:
                 case "P" | "L":
-                    possible_rows = {i for i in range(1,9)}
+                    possible_rows = {i for i in range(1, 9)}
                 case "N":
-                    possible_rows = {i for i in range(2,9)}
+                    possible_rows = {i for i in range(2, 9)}
         else:
             match piece.name:
                 case "P" | "L":
@@ -463,3 +465,4 @@ class Board:
                 else:
                     print("·", " ", end="")
             print()
+        print("\n")
