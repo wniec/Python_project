@@ -29,24 +29,24 @@ class Bot:
         self.depth = depth
         self.width = width
 
-    def test_move(self, piece, x, y, depth):
+    def __test_move(self, piece, x, y, depth):
         old_pos = piece.pos()
         captured = self.board.grid[x][y]
         was_promoted = None
         if captured:
             was_promoted = captured.promoted
         self.board.move(piece, (x, y))
-        move_result = self.evaluate(piece.color, depth)
+        move_result = self.__evaluate(piece.color, depth)
         self.board.revert_move(piece, captured, old_pos, was_promoted)
         return move_result
 
-    def test_drop(self, piece, x, y, depth):
+    def __test_drop(self, piece, x, y, depth):
         self.board.drop(piece, (x, y))
-        drop_result = self.evaluate(piece.color, depth)
+        drop_result = self.__evaluate(piece.color, depth)
         self.board.revert_drop(piece)
         return drop_result
 
-    def evaluate(self, color: COLOR, depth: int):
+    def __evaluate(self, color: COLOR, depth: int):
         if self.board.get_attacking(self.board.kings[color.value].pos(), color.opposite()):
             return -depth * 10_000
         side_0 = sum(piece.value for piece in self.board.captured[color.value].values())
@@ -59,31 +59,31 @@ class Bot:
                       self.board.active[color.opposite().value].items())
         return side_0 - side_1
 
-    def add_move(self, best_queue, color: COLOR, piece_sign: str):
+    def __add_move(self, best_queue, color: COLOR, piece_sign: str):
         piece = self.board.active[color.value][piece_sign]
         possible = self.board.get_available(piece, True)
         for x, y in possible:
             if piece.can_promote(x):
                 piece.promote()
-                best_queue.put((-self.test_move(piece, x, y, 1), x, y, piece, False, True))
+                best_queue.put((-self.__test_move(piece, x, y, 1), x, y, piece, False, True))
                 piece.degrade()
-            best_queue.put((-self.test_move(piece, x, y, 1), x, y, piece, False, False))
+            best_queue.put((-self.__test_move(piece, x, y, 1), x, y, piece, False, False))
 
-    def add_drop(self, best_queue, color: COLOR, piece_sign: str):
+    def __add_drop(self, best_queue, color: COLOR, piece_sign: str):
         piece = self.board.captured[color.value][piece_sign]
         possible = self.board.get_available_drops(piece, True)
         for x, y in possible:
-            best_queue.put((-self.test_drop(piece, x, y, 1), x, y, piece, True, False))
+            best_queue.put((-self.__test_drop(piece, x, y, 1), x, y, piece, True, False))
 
-    def test_best_moves_depth1(self, color: pieces.COLOR) -> list[tuple]:
+    def __test_best_moves_depth1(self, color: pieces.COLOR) -> list[tuple]:
         best = queue.PriorityQueue()
         result = []
 
         for piece_sign in list(self.board.active[color.value]):
-            self.add_move(best, color, piece_sign)
+            self.__add_move(best, color, piece_sign)
 
         for piece_sign in list(self.board.captured[color.value]):
-            self.add_drop(best, color, piece_sign)
+            self.__add_drop(best, color, piece_sign)
 
         i = 0
         while i < self.width and not best.empty():
@@ -102,12 +102,12 @@ class Bot:
         :param depth: depth: current depth of search
         """
         if depth == 1:
-            result = self.test_best_moves_depth1(color)
+            result = self.__test_best_moves_depth1(color)
             if result:
                 return result[0]
 
         else:
-            potential_moves = self.test_best_moves_depth1(color)
+            potential_moves = self.__test_best_moves_depth1(color)
             best_move = None
             worst_move_val = float("inf")
             for move in potential_moves:
@@ -167,7 +167,7 @@ class Bot:
             self.board.show()
             time.sleep(0.2)
             i += 1
-        result = self.evaluate(COLOR.WHITE, 1)
+        result = self.__evaluate(COLOR.WHITE, 1)
         return COLOR.WHITE if result > 0 else COLOR.BLACK
 
 
