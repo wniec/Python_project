@@ -462,7 +462,13 @@ class Handler:
                         else "Player 2"
                     )
                     self.renderer.render_endmenu(self.square_size, self.who_won)
-
+                if not self.board.is_pvp:
+                    _, x, y, piece, dropped, promoted = self.board.bot.best_move(self.board.turn_color)
+                    if dropped:
+                        self.board.drop(piece, (x, y))
+                    else:
+                        self.board.move(piece, (x, y))
+                    self.board.end_turn()
                 # ==============================================
                 print(
                     "Captured by WHITE", self.board.captured[COLOR.WHITE.value].keys()

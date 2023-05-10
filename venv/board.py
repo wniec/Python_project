@@ -4,6 +4,7 @@ import pieces
 from pieces import COLOR
 from random import randint
 import time
+from bot import Bot
 
 
 class Clock:
@@ -61,6 +62,7 @@ class Board:
 
         self.turn_color = None
         self.is_pvp = is_pvp
+        self.bot = Bot(self, 3, 4)
 
     def who_starts(self, option="Black"):
         match option:

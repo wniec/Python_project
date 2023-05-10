@@ -2,7 +2,6 @@ import queue
 from pieces import COLOR
 import pieces
 from pieces import pieces_dict
-from board import Board
 import numpy as np
 import json
 import time
@@ -95,15 +94,18 @@ class Bot:
         # checking all would take too long
         return result
 
-    def test_best_moves(self, color: COLOR, depth: int) -> (int, int, int, pieces.Piece, bool, bool):
+    def best_move(self, color: COLOR, depth: int = None) -> (int, int, int, pieces.Piece, bool, bool):
         """
         function, that returns the best move for given depth
         tests width moves for depth, for each calculating an opposite move with depth -1
+        :param color:
         :param depth: depth: current depth of search
         """
+        if depth is None:
+            depth = self.depth
         if depth == 1:
             result = self.__test_best_moves_depth1(color)
-            if result:
+            if result and result[0][0] > -10_000:
                 return result[0]
 
         else:
@@ -121,26 +123,32 @@ class Bot:
                     self.board.drop(piece, (x, y))
                 else:
                     self.board.move(piece, (x, y))
-                opposite_move = self.test_best_moves(color.opposite(), depth - 1)
+                opposite_move = self.best_move(color.opposite(), depth - 1)
                 if dropped:
                     self.board.revert_drop(piece)
                 else:
                     self.board.revert_move(piece, captured, old_pos, was_promoted)
-                if opposite_move is not None and opposite_move[0] < worst_move_val:
-                    best_move = (-opposite_move[0], x, y, piece, dropped, promoted)
+                if opposite_move is not None and opposite_move[0] - 0.1 * value < worst_move_val:
+                    best_move = (-opposite_move[0] + 0.1 * value, x, y, piece, dropped, promoted)
                     worst_move_val = opposite_move[0]
             return best_move
 
-    def play_against_bot(self, bot) -> pieces.COLOR:
-        # function for testing bot
-        # A bot vs bot game: returns COLOR of winner
+    def play_against_bot(self, bot):
+        """
+        function for testing bot
+        A bot vs bot game: returns COLOR of winner
+        :param bot: another bot to play with
+        """
         i = 0
         while i < 200:
-            if self.board.is_checkmate(COLOR.WHITE):
-                return COLOR.BLACK
-            move = self.test_best_moves(COLOR.WHITE, self.depth)
-            if move is None or self.board.is_check(COLOR.WHITE):
-                return COLOR.BLACK
+            color = self.board.turn_color
+            if self.board.is_checkmate(color):
+                print("mat")
+                return color.opposite()
+            move = self.best_move(color)
+            if move is None:
+                print("pat")
+                return None
             _, x, y, piece, dropped, promoted = move
             if promoted:
                 piece.promote()
@@ -151,29 +159,7 @@ class Bot:
             self.board.end_turn()
             self.board.show()
             time.sleep(0.2)
-            if self.board.is_checkmate(COLOR.BLACK):
-                return COLOR.WHITE
-            move = bot.test_best_moves(COLOR.BLACK, bot.depth)
-            if move is None or self.board.is_check(COLOR.BLACK):
-                return COLOR.WHITE
-            _, x, y, piece, dropped, promoted = move
-            if promoted:
-                piece.promote()
-            if dropped:
-                self.board.drop(piece, (x, y))
-            else:
-                self.board.move(piece, (x, y))
-            self.board.end_turn()
-            self.board.show()
-            time.sleep(0.2)
+            # print(self.__evaluate(COLOR.WHITE, 1))
             i += 1
         result = self.__evaluate(COLOR.WHITE, 1)
         return COLOR.WHITE if result > 0 else COLOR.BLACK
-
-
-b = Board(9)
-b.setup()
-b.who_starts(option="White")
-b1 = Bot(b, 2, 4)
-b2 = Bot(b, 3, 4)
-b1.play_against_bot(b2)
