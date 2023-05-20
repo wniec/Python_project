@@ -1,11 +1,11 @@
+import pygame
 import gameHandler
 import menuHandler
-import pygame
 
 pygame.init()
-pygame.display.set_caption("Shogi Appl")
+pygame.display.set_caption("Shogi App")
 
-WINDOW_SIZE = (854, 480)
+WINDOW_SIZE = (1024, 768)
 CLK = pygame.time.Clock()
 window = pygame.display.set_mode(WINDOW_SIZE, pygame.RESIZABLE)
 
@@ -19,7 +19,7 @@ while True:
         match change_scene_to:
             case "Game":
                 handler = gameHandler.Handler(
-                    window, window.get_size(), "Random", 60, is_pvp=True
+                    window, window.get_size(), "White", 300, is_pvp=False
                 )
 
             case "Menu":
@@ -34,4 +34,4 @@ while True:
     # Update the display
     pygame.display.update()
 
-    CLK.tick(60)
+    CLK.tick(120)

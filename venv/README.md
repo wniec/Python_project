@@ -1,10 +1,7 @@
 TODO:
 * [x] obsługa końca gry (mat lub koniec czasu)
-* [] obsługa dropów i promocji
-* [] obsługa ruchów przez komputer
-* [] w menu startowym wybór -> mode (PvP lub PvE) -> kto zaczyna (W | B | Random) -> czas (1 min | 5
-  min | 10 min | 1 h)
-
----
-
-* dodatkowe feature'y: opcja S w menu
+* [x] obsługa dropów (visual)
+* [x] obsługa ruchów przez komputer
+* [] w menu startowym wybór
+* [] w menu dodatkowe feature'y
+* [] jakiś refactor handlerów; boarda mi się nie chce refactorować bo tam jest giga syf SMH
