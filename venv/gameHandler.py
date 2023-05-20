@@ -166,7 +166,6 @@ class Renderer(AbstractRenderer):
             border=False,
         ).render_text()
 
-    # ****************************
     def draw_bg(self):
         self.screen.fill(self.bg_color)
 
@@ -215,25 +214,16 @@ class Renderer(AbstractRenderer):
 
 
 class Handler(AbstractHandler):
-    def __init__(self, window, window_size, who_starts, max_time, is_pvp):
+    def __init__(self, window, who_starts, max_time, is_pvp):
         # Window attributes
         self.window = window
-        self.window_size = window_size
-        self.board_width = 0.8 * min(window_size)
-        self.board_height = 0.8 * min(window_size)
-        self.board_pos = (
-            (window_size[0] - self.board_width) / 2,
-            (window_size[1] - self.board_height) / 2,
-        )
-        self.square_size = self.board_width // 9
-        self.drop_menu_1_pos = (
-            self.board_pos[0] - 0.75 * self.square_size,
-            self.board_pos[1] + 1.5 * self.square_size,
-        )
-        self.drop_menu_2_pos = (
-            self.board_pos[0] - 0.75 * self.square_size,
-            self.board_pos[1] + 0.5 * self.square_size,
-        )
+        self.window_size = 0
+        self.board_width = 0
+        self.board_height = 0
+        self.board_pos = (0, 0)
+        self.square_size = 0
+        self.drop_menu_1_pos = (0, 0)
+        self.drop_menu_2_pos = (0, 0)
 
         # Board attributes
         self.board = None
@@ -264,7 +254,7 @@ class Handler(AbstractHandler):
         # Renderer
         self.renderer = Renderer(window)
 
-        # Setup fields
+        # Set field values
         self.__setup()
 
     def __setup(self):
@@ -284,43 +274,15 @@ class Handler(AbstractHandler):
         # Setup logic
         pygame.time.set_timer(self.clk_event, 1000)
 
-        self.quit_button = Button(
-            (
-                self.board_pos[0]
-                + self.square_size * self.board.size
-                + 0.15 * self.square_size / 2,
-                self.board_pos[1] + self.square_size * (self.board.size // 2),
-                self.square_size,
-                self.square_size,
-            )
-        )
-        self.drop_button_1 = Button(
-            (
-                self.board_pos[0]
-                + self.square_size * self.board.size
-                + 0.15 * self.square_size / 2,
-                self.board_pos[1]
-                + self.square_size * self.board.size
-                - self.square_size,
-                self.square_size,
-                self.square_size,
-            )
-        )
-        self.drop_button_2 = Button(
-            (
-                self.board_pos[0]
-                + self.square_size * self.board.size
-                + 0.15 * self.square_size / 2,
-                self.board_pos[1],
-                self.square_size,
-                self.square_size,
-            )
-        )
+        self.quit_button = Button((0, 0, 0, 0))
+        self.drop_button_1 = Button((0, 0, 0, 0))
+        self.drop_button_2 = Button((0, 0, 0, 0))
 
-        # Setup renderer
-        self.__render_all()
+        # Setup dimensions and renders
+        self._update_dims()
+        self._render_all()
 
-    def __update_dims(self):
+    def _update_dims(self):
         self.window_size = pygame.display.get_surface().get_size()
         self.board_width = 0.8 * min(self.window_size)
         self.board_height = 0.8 * min(self.window_size)
@@ -362,7 +324,7 @@ class Handler(AbstractHandler):
             self.square_size,
         )
 
-    def __render_all(self):
+    def _render_all(self):
         self.renderer.render_pieces(self.square_size)
         self.renderer.render_board(self.square_size)
         self.renderer.render_clock(
@@ -421,28 +383,7 @@ class Handler(AbstractHandler):
             )
             return p and q
 
-        # **********************
-        def in_drop_menu(color: COLOR, x, y):
-            if color == COLOR.BLACK:
-                return (
-                    self.drop_menu_1_pos[0]
-                    <= x
-                    <= self.drop_menu_1_pos[0] + 6 * self.square_size
-                    and self.drop_menu_1_pos[1]
-                    <= y
-                    <= self.drop_menu_1_pos[1] + 7 * self.square_size
-                )
-
-            return (
-                self.drop_menu_2_pos[0]
-                <= x
-                <= self.drop_menu_2_pos[0] + 6 * self.square_size
-                and self.drop_menu_2_pos[1]
-                <= y
-                <= self.drop_menu_2_pos[1] + 7 * self.square_size
-            )
-
-        def get_position_of_captured_piece(color: COLOR, key):
+        def __get_position_in_dropmenu(color: COLOR, key):
             d = 3 if int(key[-1]) == color.value else 0
             match key[0]:
                 case "P":
@@ -487,7 +428,7 @@ class Handler(AbstractHandler):
                 self.drop_menu_1_pos[1] + x * self.square_size,
             )
 
-        def get_captured_piece(color: COLOR, x, y):
+        def __get_piece_from_dropmenu(color: COLOR, x, y):
             if color == COLOR.WHITE:
                 col = math.floor((x - self.drop_menu_2_pos[0]) / self.square_size)
                 row = math.floor((y - self.drop_menu_2_pos[1]) / self.square_size)
@@ -546,9 +487,30 @@ class Handler(AbstractHandler):
 
             return key, None
 
+        def __in_dropmenu(color: COLOR, x, y):
+            if color == COLOR.BLACK:
+                return (
+                    self.drop_menu_1_pos[0]
+                    <= x
+                    <= self.drop_menu_1_pos[0] + 6 * self.square_size
+                    and self.drop_menu_1_pos[1]
+                    <= y
+                    <= self.drop_menu_1_pos[1] + 7 * self.square_size
+                )
+
+            return (
+                self.drop_menu_2_pos[0]
+                <= x
+                <= self.drop_menu_2_pos[0] + 6 * self.square_size
+                and self.drop_menu_2_pos[1]
+                <= y
+                <= self.drop_menu_2_pos[1] + 7 * self.square_size
+            )
+
         if draw:
             r = self.renderer
 
+            # Draw base
             r.draw_bg()
             r.draw_board(self.board_pos)
             r.draw_clock(
@@ -618,6 +580,7 @@ class Handler(AbstractHandler):
                             piece.name, piece.color, __get_position_on_board(row, col)
                         )
 
+            # If ended draw end text
             if self.ended:
                 r.draw_end_text(
                     (
@@ -627,23 +590,25 @@ class Handler(AbstractHandler):
                     )
                 )
 
+            # If dragging draw piece in hand
             elif self.dragging:
                 r.draw_piece(
                     self.active_piece.name, self.active_piece.color, self.active_pos
                 )
 
+            # If enabled draw dropmenu
             elif self.drop_menu_enabled_1:
                 r.draw_drop_menu(self.drop_menu_1_pos, COLOR.BLACK)
 
                 for key, piece in self.board.captured[COLOR.BLACK.value].items():
-                    pos = get_position_of_captured_piece(COLOR.BLACK, key)
+                    pos = __get_position_in_dropmenu(COLOR.BLACK, key)
                     r.draw_piece(piece.name, COLOR.BLACK, pos)
 
             elif self.drop_menu_enabled_2:
                 r.draw_drop_menu(self.drop_menu_2_pos, COLOR.WHITE)
 
                 for key, piece in self.board.captured[COLOR.WHITE.value].items():
-                    pos = get_position_of_captured_piece(COLOR.WHITE, key)
+                    pos = __get_position_in_dropmenu(COLOR.WHITE, key)
                     r.draw_piece(piece.name, COLOR.WHITE, pos)
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -658,7 +623,7 @@ class Handler(AbstractHandler):
 
                 if self.board.grid[row][col] != None:
                     # Piece in hand
-                    
+
                     self.dragging = True
                     self.active_piece = self.board.grid[row][col]
                     self.active_pos = __get_position_on_board(
@@ -674,6 +639,7 @@ class Handler(AbstractHandler):
                         self.active_pos[1] - event.pos[1],
                     )
 
+            # Drop button logic
             elif (
                 not self.ended
                 and not self.drop_menu_enabled_2
@@ -682,6 +648,7 @@ class Handler(AbstractHandler):
                 pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
                 self.drop_menu_enabled_1 = not self.drop_menu_enabled_1
 
+            # Drop button logic
             elif (
                 not self.ended
                 and not self.drop_menu_enabled_1
@@ -690,40 +657,47 @@ class Handler(AbstractHandler):
                 pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
                 self.drop_menu_enabled_2 = not self.drop_menu_enabled_2
 
+            # Drop menu logic
             elif (
                 not self.ended
                 and self.drop_menu_enabled_1
-                and in_drop_menu(COLOR.BLACK, event.pos[0], event.pos[1])
+                and __in_dropmenu(COLOR.BLACK, event.pos[0], event.pos[1])
             ):
-                key, piece = get_captured_piece(COLOR.BLACK, event.pos[0], event.pos[1])
+                key, piece = __get_piece_from_dropmenu(
+                    COLOR.BLACK, event.pos[0], event.pos[1]
+                )
                 if piece != None:
                     # Piece in hand
                     self.dragging = True
                     self.active_piece = piece
-                    self.active_pos = get_position_of_captured_piece(COLOR.BLACK, key)
+                    self.active_pos = __get_position_in_dropmenu(COLOR.BLACK, key)
                     self.available_squares = self.board.get_available_drops(piece)
                     self.mouse_offset = (
                         self.active_pos[0] - event.pos[0],
                         self.active_pos[1] - event.pos[1],
                     )
 
+            # Drop menu logic
             elif (
                 not self.ended
                 and self.drop_menu_enabled_2
-                and in_drop_menu(COLOR.WHITE, event.pos[0], event.pos[1])
+                and __in_dropmenu(COLOR.WHITE, event.pos[0], event.pos[1])
             ):
-                key, piece = get_captured_piece(COLOR.WHITE, event.pos[0], event.pos[1])
+                key, piece = __get_piece_from_dropmenu(
+                    COLOR.WHITE, event.pos[0], event.pos[1]
+                )
                 if piece != None:
                     # Piece in hand
                     self.dragging = True
                     self.active_piece = piece
-                    self.active_pos = get_position_of_captured_piece(COLOR.WHITE, key)
+                    self.active_pos = __get_position_in_dropmenu(COLOR.WHITE, key)
                     self.available_squares = self.board.get_available_drops(piece)
                     self.mouse_offset = (
                         self.active_pos[0] - event.pos[0],
                         self.active_pos[1] - event.pos[1],
                     )
 
+            # Quit button logic
             elif self.quit_button.inbounds((event.pos[0], event.pos[1])):
                 pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
                 return "Menu"
@@ -741,6 +715,7 @@ class Handler(AbstractHandler):
                 self.dragging = False
                 self.active_pos = (event.pos[0], event.pos[1])
 
+                # Handle dropping a piece from drop menu
                 if self.drop_menu_enabled_1 or self.drop_menu_enabled_2:
                     self.drop_menu_enabled_1 = False
                     self.drop_menu_enabled_2 = False
@@ -750,6 +725,7 @@ class Handler(AbstractHandler):
                         __get_rowcol_on_board(self.active_pos[0], self.active_pos[1]),
                     )
 
+                # Handle moving a piece on the board
                 else:
                     self.board.move(
                         self.active_piece,
@@ -768,7 +744,8 @@ class Handler(AbstractHandler):
                 if self.board.is_checkmate(self.board.turn_color):
                     self.__end_game()
 
-                if not self.board.is_pvp:
+                # Handle bot move
+                if not self.ended and not self.board.is_pvp:
                     _, x, y, piece, dropped, promoted = self.board.bot.best_move(
                         self.board.turn_color
                     )
@@ -782,6 +759,7 @@ class Handler(AbstractHandler):
                     if self.board.is_checkmate(self.board.turn_color):
                         self.__end_game()
 
+            # If incorrect release position stop dragging the piece
             elif self.dragging:
                 self.dragging = False
                 self.active_piece = None
@@ -812,6 +790,7 @@ class Handler(AbstractHandler):
                     event.pos[1] + self.mouse_offset[1],
                 )
 
+            # Hover logic
             elif (
                 not self.ended
                 and not self.drop_menu_enabled_2
@@ -820,6 +799,7 @@ class Handler(AbstractHandler):
                 pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
                 self.drop_button_1.hover = True
 
+            # Hover logic
             elif (
                 not self.ended
                 and not self.drop_menu_enabled_1
@@ -828,10 +808,12 @@ class Handler(AbstractHandler):
                 pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
                 self.drop_button_2.hover = True
 
+            # Hover logic
             elif self.quit_button.inbounds((event.pos[0], event.pos[1])):
                 pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
                 self.quit_button.hover = True
 
+            # Hover logic
             else:
                 pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
 
@@ -844,8 +826,8 @@ class Handler(AbstractHandler):
                 self.quit_button.hover = False
 
         elif event.type == pygame.VIDEORESIZE:
-            self.__update_dims()
-            self.__render_all()
+            self._update_dims()
+            self._render_all()
 
         elif event.type == pygame.QUIT:
             pygame.quit()

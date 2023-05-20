@@ -1,29 +1,35 @@
 import pygame
 import gameHandler
 import menuHandler
+import statsHandler
 
 pygame.init()
-pygame.display.set_caption("Shogi App")
+pygame.display.set_caption("Pixel Shogi")
 
 WINDOW_SIZE = (1024, 768)
 CLK = pygame.time.Clock()
+
 window = pygame.display.set_mode(WINDOW_SIZE, pygame.RESIZABLE)
-
-
-handler = menuHandler.Handler(window, WINDOW_SIZE)
+handler = menuHandler.Handler(window)
 
 while True:
     # Handle events
     for event in pygame.event.get():
-        change_scene_to = handler.handle(event)
+        res = handler.handle(event)
+        try:
+            change_scene_to, args = res
+        except:
+            change_scene_to = res
+
         match change_scene_to:
             case "Game":
-                handler = gameHandler.Handler(
-                    window, window.get_size(), "White", 300, is_pvp=False
-                )
+                handler = gameHandler.Handler(window, **args)
 
             case "Menu":
-                handler = menuHandler.Handler(window, window.get_size())
+                handler = menuHandler.Handler(window)
+
+            case "Stats":
+                print("Not yet implemented")
 
             case _:
                 pass

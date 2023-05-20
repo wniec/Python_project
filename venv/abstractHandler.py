@@ -1,5 +1,8 @@
-from abc import ABC, abstractmethod
 import pygame
+import pygame.freetype
+
+from abc import ABC, abstractmethod
+
 
 SPRITE_PATH = "rsrc/sprites/"
 FONT_PATH = "rsrc/fonts/"
@@ -75,6 +78,14 @@ class AbstractRenderer(ABC):
 
 
 class AbstractHandler(ABC):
+    @abstractmethod
+    def _render_all(self):
+        pass
+
+    @abstractmethod
+    def _update_dims(self):
+        pass
+
     @abstractmethod
     def handle(self, event, draw=False):
         pass

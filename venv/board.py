@@ -1,5 +1,6 @@
 import time
 import pieces
+
 from bot import Bot
 from pieces import COLOR
 
