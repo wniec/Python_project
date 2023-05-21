@@ -431,12 +431,8 @@ class Board:
                 defender = self.active[king.color.value][piece_type]
 
                 for move in self.get_available(defender):
-                    if defender.color == COLOR.WHITE:
-                        row, col = defender.row + move[0], defender.col + move[1]
-                    else:
-                        row, col = defender.row - move[0], defender.col - move[1]
 
-                    if (row, col) in path:
+                    if move in path:
                         return False
 
         # Check if any piece can capture the attacking piece
