@@ -11,9 +11,12 @@ class Sprite:
         self.render(size)
 
     def render(self, size: float):
+        """Renders 2D square pixel art from npy array to pygame surface. Only supports square rendering i.e. self.rgb_array is a square matrix.
+
+        Args:
+            size (float): size
         """
-        Only supports square rendering i.e. self.rgb_array is a square matrix
-        """
+
         n = len(self.rgb_array)
         pxl_size = size // n
         padding = (abs((size / n) - pxl_size) * n) / 2
