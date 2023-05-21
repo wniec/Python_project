@@ -47,10 +47,10 @@ class Bot:
             self.board.kings[color.value].pos(), color.opposite()
         ):
             return -depth * 10_000
-        side_0 = sum(piece.value for piece in self.board.captured[color.value].values())
+        side_0 = sum(piece.value_in_hand for piece in self.board.captured[color.value].values())
         side_0 += sum(piece.value for piece in self.board.active[color.value].values())
         side_1 = sum(
-            piece.value
+            piece.value_in_hand
             for piece in self.board.captured[color.opposite().value].values()
         )
         side_1 += sum(
