@@ -1,7 +1,6 @@
 import pygame
 import gameHandler
 import menuHandler
-import statsHandler
 
 pygame.init()
 pygame.display.set_caption("Pixel Shogi")

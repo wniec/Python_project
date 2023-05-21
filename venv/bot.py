@@ -3,15 +3,12 @@ from pieces import COLOR
 import pieces
 from pieces import pieces_dict
 import numpy as np
-import json
 import time
 
 
 def read_matrix():
-    with open("values.json", "r") as read_file:
-        decoded_array = json.load(read_file)
-        matrix = np.asarray(decoded_array["valueMatrix"])
-        return matrix
+    matrix = np.load("values.npy", allow_pickle=True, mmap_mode='r')
+    return matrix
 
 
 def matrix_position(position, color: COLOR):
@@ -149,10 +146,10 @@ class Bot:
                     self.board.revert_move(piece, captured, old_pos, was_promoted)
                 if (
                     opposite_move is not None
-                    and opposite_move[0] - 0.1 * value < worst_move_val
+                    and opposite_move[0] < worst_move_val
                 ):
                     best_move = (
-                        -opposite_move[0] + 0.1 * value,
+                        -opposite_move[0],
                         x,
                         y,
                         piece,
@@ -163,6 +160,7 @@ class Bot:
             return best_move
 
     def play_against_bot(self, bot):
+        bots = [self, bot]
         """
         function for testing bot
         A bot vs bot game: returns COLOR of winner
@@ -174,7 +172,7 @@ class Bot:
             if self.board.is_checkmate(color):
                 print("mat")
                 return color.opposite()
-            move = self.best_move(color)
+            move = bots[i % 2].best_move(color)
             if move is None:
                 print("pat")
                 return None

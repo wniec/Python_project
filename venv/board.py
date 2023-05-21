@@ -234,12 +234,9 @@ class Board:
 
     def get_attacking(self, pos: tuple[int, int], attacking_color: COLOR) -> list:
         """Returns set of all `attacking_color` pieces which attack square at pos `position`
-
         Args:
             pos (tuple[int, int]): color of attacking pieces
-
             attacking_color (COLOR): position of square
-
         Returns:
             list:
         """
@@ -431,12 +428,7 @@ class Board:
                 defender = self.active[king.color.value][piece_type]
 
                 for move in self.get_available(defender):
-                    if defender.color == COLOR.WHITE:
-                        row, col = defender.row + move[0], defender.col + move[1]
-                    else:
-                        row, col = defender.row - move[0], defender.col - move[1]
-
-                    if (row, col) in path:
+                    if move in path:
                         return False
 
         # Check if any piece can capture the attacking piece
