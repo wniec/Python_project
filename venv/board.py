@@ -221,12 +221,12 @@ class Board:
                 row, col = piece.row - move[0], piece.col - move[1]
 
             if (
-                inbounds(row, col)
-                and not self.is_blocked((row, col), piece)
-                and (
+                    inbounds(row, col)
+                    and not self.is_blocked((row, col), piece)
+                    and (
                     self.grid[row][col] is None
                     or self.grid[row][col].color != piece.color
-                )
+            )
             ):
                 available_pos.add((row, col))
 
@@ -272,9 +272,9 @@ class Board:
         """
 
         if (
-            self.grid[new_position[0]][new_position[1]] is not None
-            and self.grid[new_position[0]][new_position[1]].color
-            == piece.color.opposite()
+                self.grid[new_position[0]][new_position[1]] is not None
+                and self.grid[new_position[0]][new_position[1]].color
+                == piece.color.opposite()
         ):
             self.capture(self.grid[new_position[0]][new_position[1]])
 
@@ -308,11 +308,11 @@ class Board:
         self.turn_color = self.turn_color.opposite()
 
     def revert_move(
-        self,
-        piece: pieces.Piece,
-        captured: pieces.Piece,
-        old_position: tuple[int, int],
-        was_promoted: bool,
+            self,
+            piece: pieces.Piece,
+            captured: pieces.Piece,
+            old_position: tuple[int, int],
+            was_promoted: bool,
     ):
         if captured is not None:
             if captured.color == piece.color:
@@ -395,13 +395,14 @@ class Board:
         for x in possible_rows:
             for y in possible_cols:
                 if self.grid[x][y] is None and not (
-                    king_x == x + color.value * 2 - 1 and king_y == y
+                        king_x == x + color.value * 2 - 1 and king_y == y
                 ):
                     free.add((x, y))
         return free
 
     def is_checkmate(self, color):
         king = self.kings[color.value]
+
         attackers = self.get_attacking((king.row, king.col), king.color.opposite())
 
         # Check if king was captured
@@ -414,7 +415,30 @@ class Board:
 
         # Check if the king can escape or capture the attacking piece
         for pos in self.get_available(king):
-            if len(self.get_attacking(pos, king.color.opposite())) == 0:
+            attack_pieces = []
+
+            for piece_type in self.active[color.opposite().value].keys():
+                attack_piece = self.active[color.opposite().value][piece_type]
+                positions = set()
+
+                for move in attack_piece.moves:
+                    if attack_piece.color == COLOR.WHITE:
+                        row, col = attack_piece.row + move[0], attack_piece.col + move[1]
+                    else:
+                        row, col = attack_piece.row - move[0], attack_piece.col - move[1]
+
+                    if row != attack_piece.row or col != attack_piece.col:
+                        positions.add((row, col))
+                king_is_blocked = False
+                path = self.__get_path(attack_piece.pos(), pos)
+
+                for row, col in path:
+                    if self.grid[row][col] is not None and self.grid[row][col] is not king:
+                        king_is_blocked = True
+                        break
+                if pos in positions and not king_is_blocked:
+                    attack_pieces.append(attack_piece)
+            if len(attack_pieces) == 0:
                 return False
 
         # Check if any piece can block the attack
@@ -442,6 +466,11 @@ class Board:
                 return False
 
         return True
+
+    def is_check(self, color: pieces.COLOR):
+        king = self.kings[color.value]
+        attackers = self.get_attacking(king.pos(), color.opposite())
+        return len(attackers) > 0
 
     def show(self):
         import os
