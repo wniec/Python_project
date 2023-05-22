@@ -222,7 +222,7 @@ class Board:
 
             if (
                 inbounds(row, col)
-                and not self.is_blocked((row, col), piece)
+                and not self.__is_blocked((row, col), piece)
                 and (
                     self.grid[row][col] is None
                     or self.grid[row][col].color != piece.color
