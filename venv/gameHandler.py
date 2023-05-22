@@ -390,28 +390,23 @@ class Handler(AbstractHandler):
                     x, y = int(key[1]) // 3, int(key[1]) % 3
                 case "R":
                     x, y = 3, 0
-
                 case "B":
                     x, y = 3, 1
-
                 case "L":
                     if key[1] == "1":
                         x, y = 3, 2
                     else:
                         x, y = 4, 0
-
                 case "N":
                     if key[1] == "1":
                         x, y = 4, 1
                     else:
                         x, y = 4, 2
-
                 case "S":
                     if key[1] == "1":
                         x, y = 5, 0
                     else:
                         x, y = 5, 1
-
                 case "G":
                     if key[1] == "1":
                         x, y = 5, 2

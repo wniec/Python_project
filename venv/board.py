@@ -176,7 +176,7 @@ class Board:
 
         return path
 
-    def is_blocked(self, pos, piece: pieces.Piece) -> bool:
+    def __is_blocked(self, pos, piece: pieces.Piece) -> bool:
         """Checks whether `piece` has a line of sight to square at position `pos`.
 
         Args:
@@ -222,7 +222,7 @@ class Board:
 
             if (
                 inbounds(row, col)
-                and not self.is_blocked((row, col), piece)
+                and not self.__is_blocked((row, col), piece)
                 and (
                     self.grid[row][col] is None
                     or self.grid[row][col].color != piece.color
@@ -234,9 +234,13 @@ class Board:
 
     def get_attacking(self, pos: tuple[int, int], attacking_color: COLOR) -> list:
         """Returns set of all `attacking_color` pieces which attack square at pos `position`
+
         Args:
-            pos (tuple[int, int]): color of attacking pieces
-            attacking_color (COLOR): position of square
+
+            pos (tuple[int, int]): position of square
+
+            attacking_color (COLOR): color of attacking pieces
+
         Returns:
             list:
         """
@@ -256,7 +260,7 @@ class Board:
                 if row != attack_piece.row or col != attack_piece.col:
                     positions.add((row, col))
 
-            if pos in positions and not self.is_blocked(pos, attack_piece):
+            if pos in positions and not self.__is_blocked(pos, attack_piece):
                 attack_pieces.append(attack_piece)
 
         return attack_pieces
@@ -303,51 +307,16 @@ class Board:
 
         del self.active[color.value][capture_key]
 
-    def end_turn(self):
-        self.clock.switch_to(self.turn_color.opposite())
-        self.turn_color = self.turn_color.opposite()
-
-    def revert_move(
-        self,
-        piece: pieces.Piece,
-        captured: pieces.Piece,
-        old_position: tuple[int, int],
-        was_promoted: bool,
-    ):
-        if captured is not None:
-            if captured.color == piece.color:
-                raise ValueError
-            if was_promoted:
-                captured.promote()
-            captured.place(piece.pos())
-            captured_key = None
-            for key, val in self.captured[piece.color.value].items():
-                if val is captured:
-                    captured_key = key
-            self.active[piece.color.opposite().value][captured_key] = captured
-            del self.captured[piece.color.value][captured_key]
-            captured.color = piece.color.opposite()
-        self.grid[piece.row][piece.col] = captured
-        self.grid[old_position[0]][old_position[1]] = piece
-        piece.place(old_position)
-
-    def revert_drop(self, piece: pieces.Piece) -> None:
-        x, y = piece.pos()
-        self.grid[x][y] = None
-        undrop_key = None
-        for key, val in self.active[piece.color.value].items():
-            if val is piece:
-                undrop_key = key
-        self.captured[piece.color.value][undrop_key] = piece
-        del self.active[piece.color.value][undrop_key]
-        piece.color = piece.color.opposite()
-
     def drop(self, piece: pieces.Piece, new_position) -> None:
-        """
-        Drops piece to new position i.e. changes its internal position `(piece.x, piece.y)` and
+        """Drops piece to new position i.e. changes its internal position `(piece.x, piece.y)` and
         changes piece's position on the board stored in structures `self.grid` and `self.active`.
-        :param piece:
-        :param new_position:
+
+        Args:
+            piece (pieces.Piece): _description_
+            new_position (_type_): _description_
+
+        Raises:
+            ValueError: _description_
         """
         piece.degrade()
         piece.place(new_position)
@@ -442,6 +411,47 @@ class Board:
                 return False
 
         return True
+
+    def end_turn(self):
+        self.clock.switch_to(self.turn_color.opposite())
+        self.turn_color = self.turn_color.opposite()
+
+    # ==============================================================================================
+
+    def revert_move(
+        self,
+        piece: pieces.Piece,
+        captured: pieces.Piece,
+        old_position: tuple[int, int],
+        was_promoted: bool,
+    ):
+        if captured is not None:
+            if captured.color == piece.color:
+                raise ValueError
+            if was_promoted:
+                captured.promote()
+            captured.place(piece.pos())
+            captured_key = None
+            for key, val in self.captured[piece.color.value].items():
+                if val is captured:
+                    captured_key = key
+            self.active[piece.color.opposite().value][captured_key] = captured
+            del self.captured[piece.color.value][captured_key]
+            captured.color = piece.color.opposite()
+        self.grid[piece.row][piece.col] = captured
+        self.grid[old_position[0]][old_position[1]] = piece
+        piece.place(old_position)
+
+    def revert_drop(self, piece: pieces.Piece) -> None:
+        x, y = piece.pos()
+        self.grid[x][y] = None
+        undrop_key = None
+        for key, val in self.active[piece.color.value].items():
+            if val is piece:
+                undrop_key = key
+        self.captured[piece.color.value][undrop_key] = piece
+        del self.active[piece.color.value][undrop_key]
+        piece.color = piece.color.opposite()
 
     def show(self):
         import os
