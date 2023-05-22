@@ -222,7 +222,7 @@ class Board:
 
             if (
                 inbounds(row, col)
-                and not self.__is_blocked((row, col), piece)
+                and not self.is_blocked((row, col), piece)
                 and (
                     self.grid[row][col] is None
                     or self.grid[row][col].color != piece.color
@@ -307,6 +307,45 @@ class Board:
 
         del self.active[color.value][capture_key]
 
+    def end_turn(self):
+        self.clock.switch_to(self.turn_color.opposite())
+        self.turn_color = self.turn_color.opposite()
+
+    def revert_move(
+        self,
+        piece: pieces.Piece,
+        captured: pieces.Piece,
+        old_position: tuple[int, int],
+        was_promoted: bool,
+    ):
+        if captured is not None:
+            if captured.color == piece.color:
+                raise ValueError
+            if was_promoted:
+                captured.promote()
+            captured.place(piece.pos())
+            captured_key = None
+            for key, val in self.captured[piece.color.value].items():
+                if val is captured:
+                    captured_key = key
+            self.active[piece.color.opposite().value][captured_key] = captured
+            del self.captured[piece.color.value][captured_key]
+            captured.color = piece.color.opposite()
+        self.grid[piece.row][piece.col] = captured
+        self.grid[old_position[0]][old_position[1]] = piece
+        piece.place(old_position)
+
+    def revert_drop(self, piece: pieces.Piece) -> None:
+        x, y = piece.pos()
+        self.grid[x][y] = None
+        undrop_key = None
+        for key, val in self.active[piece.color.value].items():
+            if val is piece:
+                undrop_key = key
+        self.captured[piece.color.value][undrop_key] = piece
+        del self.active[piece.color.value][undrop_key]
+        piece.color = piece.color.opposite()
+
     def drop(self, piece: pieces.Piece, new_position) -> None:
         """Drops piece to new position i.e. changes its internal position `(piece.x, piece.y)` and
         changes piece's position on the board stored in structures `self.grid` and `self.active`.
@@ -371,6 +410,7 @@ class Board:
 
     def is_checkmate(self, color):
         king = self.kings[color.value]
+
         attackers = self.get_attacking((king.row, king.col), king.color.opposite())
 
         # Check if king was captured
@@ -383,7 +423,39 @@ class Board:
 
         # Check if the king can escape or capture the attacking piece
         for pos in self.get_available(king):
-            if len(self.get_attacking(pos, king.color.opposite())) == 0:
+            attack_pieces = []
+
+            for piece_type in self.active[color.opposite().value].keys():
+                attack_piece = self.active[color.opposite().value][piece_type]
+                positions = set()
+
+                for move in attack_piece.moves:
+                    if attack_piece.color == COLOR.WHITE:
+                        row, col = (
+                            attack_piece.row + move[0],
+                            attack_piece.col + move[1],
+                        )
+                    else:
+                        row, col = (
+                            attack_piece.row - move[0],
+                            attack_piece.col - move[1],
+                        )
+
+                    if row != attack_piece.row or col != attack_piece.col:
+                        positions.add((row, col))
+                king_is_blocked = False
+                path = self.__get_path(attack_piece.pos(), pos)
+
+                for row, col in path:
+                    if (
+                        self.grid[row][col] is not None
+                        and self.grid[row][col] is not king
+                    ):
+                        king_is_blocked = True
+                        break
+                if pos in positions and not king_is_blocked:
+                    attack_pieces.append(attack_piece)
+            if len(attack_pieces) == 0:
                 return False
 
         # Check if any piece can block the attack
@@ -412,46 +484,10 @@ class Board:
 
         return True
 
-    def end_turn(self):
-        self.clock.switch_to(self.turn_color.opposite())
-        self.turn_color = self.turn_color.opposite()
-
-    # ==============================================================================================
-
-    def revert_move(
-        self,
-        piece: pieces.Piece,
-        captured: pieces.Piece,
-        old_position: tuple[int, int],
-        was_promoted: bool,
-    ):
-        if captured is not None:
-            if captured.color == piece.color:
-                raise ValueError
-            if was_promoted:
-                captured.promote()
-            captured.place(piece.pos())
-            captured_key = None
-            for key, val in self.captured[piece.color.value].items():
-                if val is captured:
-                    captured_key = key
-            self.active[piece.color.opposite().value][captured_key] = captured
-            del self.captured[piece.color.value][captured_key]
-            captured.color = piece.color.opposite()
-        self.grid[piece.row][piece.col] = captured
-        self.grid[old_position[0]][old_position[1]] = piece
-        piece.place(old_position)
-
-    def revert_drop(self, piece: pieces.Piece) -> None:
-        x, y = piece.pos()
-        self.grid[x][y] = None
-        undrop_key = None
-        for key, val in self.active[piece.color.value].items():
-            if val is piece:
-                undrop_key = key
-        self.captured[piece.color.value][undrop_key] = piece
-        del self.active[piece.color.value][undrop_key]
-        piece.color = piece.color.opposite()
+    def is_check(self, color: pieces.COLOR):
+        king = self.kings[color.value]
+        attackers = self.get_attacking(king.pos(), color.opposite())
+        return len(attackers) > 0
 
     def show(self):
         import os
