@@ -2,8 +2,9 @@ import pygame
 import pygame.freetype
 import numpy as np
 
-from sprite import Sprite
-from abstractHandler import (
+from gui.sprite import Sprite
+from gui.saveController import SaveController
+from gui.abstractHandler import (
     TextBox,
     Button,
     AbstractRenderer,

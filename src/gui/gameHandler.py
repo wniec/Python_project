@@ -2,13 +2,14 @@ import pygame
 import pygame.freetype
 import numpy as np
 import math
-import board
-import pieces
+import engine.board as board
+import engine.pieces as pieces
 
-from pieces import COLOR
-from sprite import Sprite
 from random import randint
-from abstractHandler import (
+from engine.pieces import COLOR
+from gui.saveController import SaveController
+from gui.sprite import Sprite
+from gui.abstractHandler import (
     TextBox,
     Button,
     AbstractRenderer,
@@ -358,6 +359,11 @@ class Handler(AbstractHandler):
         self.dragging = False
 
         self.renderer.render_end_text(self.square_size, self.who_won)
+
+        if not self.is_pvp and self.who_won == "Player 1":
+            SaveController().update("Win")
+        elif not self.is_pvp:
+            SaveController().update("Loss")
 
     def handle(self, event, draw=False):
         def __get_position_on_board(row, col):
