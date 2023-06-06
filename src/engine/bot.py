@@ -1,13 +1,16 @@
-import queue
-from pieces import COLOR
-import pieces
-from pieces import pieces_dict
+import engine.pieces as pieces
 import numpy as np
+import queue
 import time
+
+from engine.pieces import COLOR
+from engine.pieces import pieces_dict
+
+MATRIX_PATH = "resources/bot/values.npy"
 
 
 def read_matrix():
-    matrix = np.load("values.npy", allow_pickle=True, mmap_mode='r')
+    matrix = np.load(MATRIX_PATH, allow_pickle=True, mmap_mode="r")
     return matrix
 
 
@@ -47,7 +50,9 @@ class Bot:
             return -depth * 20_000
         if self.board.is_checkmate(color.opposite()):
             return depth * 20_000
-        side_0 = sum(piece.value_in_hand for piece in self.board.captured[color.value].values())
+        side_0 = sum(
+            piece.value_in_hand for piece in self.board.captured[color.value].values()
+        )
         side_0 += sum(piece.value for piece in self.board.active[color.value].values())
         side_1 = sum(
             piece.value_in_hand
@@ -144,10 +149,7 @@ class Bot:
                     self.board.revert_drop(piece)
                 else:
                     self.board.revert_move(piece, captured, old_pos, was_promoted)
-                if (
-                        opposite_move is not None
-                        and opposite_move[0] < worst_move_val
-                ):
+                if opposite_move is not None and opposite_move[0] < worst_move_val:
                     best_move = (
                         -opposite_move[0],
                         x,

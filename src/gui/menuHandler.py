@@ -2,8 +2,8 @@ import pygame
 import pygame.freetype
 import numpy as np
 
-from sprite import Sprite
-from abstractHandler import (
+from gui.sprite import Sprite
+from gui.abstractHandler import (
     TextBox,
     Button,
     AbstractRenderer,
@@ -115,7 +115,6 @@ class Renderer(AbstractRenderer):
     def __init__(self, screen):
         self.screen = screen
         self.bg_color = RGB_BLACK
-        self.nbg_color = RGB_WHITE
         self.bg = Sprite(np.load(SPRITE_PATH + "bg" ".npy"), 100)
 
         self.newgame_button = None

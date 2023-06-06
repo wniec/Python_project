@@ -1,9 +1,12 @@
 import pygame
-import gameHandler
-import menuHandler
+import gui.gameHandler as gameHandler
+import gui.menuHandler as menuHandler
+import gui.statsHandler as statsHandler
+
+from gui.saveController import SaveController
 
 pygame.init()
-pygame.display.set_caption("Pixel Shogi")
+pygame.display.set_caption("Shogi")
 
 WINDOW_SIZE = (1024, 768)
 CLK = pygame.time.Clock()
@@ -28,7 +31,7 @@ while True:
                 handler = menuHandler.Handler(window)
 
             case "Stats":
-                print("Not yet implemented")
+                handler = statsHandler.Handler(window)
 
             case _:
                 pass
