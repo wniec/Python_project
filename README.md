@@ -5,3 +5,9 @@ bot which utilizes the [Alpha-beta
 pruning](https://en.wikipedia.org/wiki/Alpha%E2%80%93beta_pruning) search algorithm to find their
 next move. The application enables one to either play against another person locally on the same
 device or play against computer (bot).
+
+![](report/sc1.png)
+
+![](report/sc2.png)
+
+![](report/sc3.png)
