@@ -115,7 +115,6 @@ class Renderer(AbstractRenderer):
     def __init__(self, screen):
         self.screen = screen
         self.bg_color = RGB_BLACK
-        self.nbg_color = RGB_WHITE
         self.bg = Sprite(np.load(SPRITE_PATH + "bg" ".npy"), 100)
 
         self.newgame_button = None

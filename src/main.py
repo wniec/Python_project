@@ -1,6 +1,7 @@
 import pygame
 import gui.gameHandler as gameHandler
 import gui.menuHandler as menuHandler
+import gui.statsHandler as statsHandler
 
 from gui.saveController import SaveController
 
@@ -30,8 +31,7 @@ while True:
                 handler = menuHandler.Handler(window)
 
             case "Stats":
-                print(SaveController().get_data())
-                print("Not yet implemented")
+                handler = statsHandler.Handler(window)
 
             case _:
                 pass
