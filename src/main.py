@@ -3,8 +3,6 @@ import gui.gameHandler as gameHandler
 import gui.menuHandler as menuHandler
 import gui.statsHandler as statsHandler
 
-from gui.saveController import SaveController
-
 pygame.init()
 pygame.display.set_caption("Shogi")
 

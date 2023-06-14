@@ -2,10 +2,10 @@ import pygame
 import pygame.freetype
 
 from abc import ABC, abstractmethod
+from config.defs import SRC_DIR
 
-
-SPRITE_PATH = "resources/sprites/"
-FONT_PATH = "resources/fonts/"
+SPRITE_PATH = SRC_DIR + "/resources/sprites/"
+FONT_PATH = SRC_DIR + "/resources/fonts/"
 
 RGB_BLACK = (0, 0, 0)
 RGB_WHITE = (255, 255, 255)

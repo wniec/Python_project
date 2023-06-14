@@ -3,10 +3,11 @@ import numpy as np
 import queue
 import time
 
+from config.defs import SRC_DIR
 from engine.pieces import COLOR
 from engine.pieces import pieces_dict
 
-MATRIX_PATH = "resources/bot/values.npy"
+MATRIX_PATH = SRC_DIR + "/resources/bot/values.npy"
 
 
 def read_matrix():
