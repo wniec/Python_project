@@ -11,3 +11,8 @@ device or play against computer (bot).
 ![](report/sc2.png)
 
 ![](report/sc3.png)
+
+## Authors
+
+* Władysław Nieć ([@wniec](https://github.com/wniec))
+* Bartosz Hanc ([@BH4N5](https://github.com/Bh4n5))
