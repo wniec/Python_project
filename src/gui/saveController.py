@@ -1,6 +1,7 @@
 import json
+from config.defs import SRC_DIR
 
-SAVE_PATH = "resources/saves/data.json"
+SAVE_PATH = SRC_DIR + "/resources/saves/data.json"
 
 
 class SaveController:
