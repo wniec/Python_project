@@ -1,8 +1,8 @@
 import time
-import pieces
+import engine.pieces as pieces
 
-from bot import Bot
-from pieces import COLOR
+from engine.bot import Bot
+from engine.pieces import COLOR
 
 
 class Clock:
@@ -176,7 +176,7 @@ class Board:
 
         return path
 
-    def is_blocked(self, pos, piece: pieces.Piece) -> bool:
+    def __is_blocked(self, pos, piece: pieces.Piece) -> bool:
         """Checks whether `piece` has a line of sight to square at position `pos`.
 
         Args:
@@ -222,7 +222,7 @@ class Board:
 
             if (
                 inbounds(row, col)
-                and not self.is_blocked((row, col), piece)
+                and not self.__is_blocked((row, col), piece)
                 and (
                     self.grid[row][col] is None
                     or self.grid[row][col].color != piece.color
@@ -236,9 +236,10 @@ class Board:
         """Returns set of all `attacking_color` pieces which attack square at pos `position`
 
         Args:
-            pos (tuple[int, int]): color of attacking pieces
 
-            attacking_color (COLOR): position of square
+            pos (tuple[int, int]): position of square
+
+            attacking_color (COLOR): color of attacking pieces
 
         Returns:
             list:
@@ -246,8 +247,7 @@ class Board:
 
         attack_pieces = []
 
-        for piece_type in self.active[attacking_color.value].keys():
-            attack_piece = self.active[attacking_color.value][piece_type]
+        for attack_piece in self.active[attacking_color.value].values():
             positions = set()
 
             for move in attack_piece.moves:
@@ -259,7 +259,7 @@ class Board:
                 if row != attack_piece.row or col != attack_piece.col:
                     positions.add((row, col))
 
-            if pos in positions and not self.is_blocked(pos, attack_piece):
+            if pos in positions and not self.__is_blocked(pos, attack_piece):
                 attack_pieces.append(attack_piece)
 
         return attack_pieces
@@ -346,11 +346,15 @@ class Board:
         piece.color = piece.color.opposite()
 
     def drop(self, piece: pieces.Piece, new_position) -> None:
-        """
-        Drops piece to new position i.e. changes its internal position `(piece.x, piece.y)` and
+        """Drops piece to new position i.e. changes its internal position `(piece.x, piece.y)` and
         changes piece's position on the board stored in structures `self.grid` and `self.active`.
-        :param piece:
-        :param new_position:
+
+        Args:
+            piece (pieces.Piece): _description_
+            new_position (_type_): _description_
+
+        Raises:
+            ValueError: _description_
         """
         piece.degrade()
         piece.place(new_position)
@@ -390,7 +394,7 @@ class Board:
         possible_cols = set(i for i in range(9))
         impossible_cols = set()
         if piece.name == "P":
-            for key, val in self.active[color.value].items():
+            for val in self.active[color.value].values():
                 if val.name == "P":
                     impossible_cols.add(val.col)
         possible_cols.difference_update(impossible_cols)
@@ -405,6 +409,7 @@ class Board:
 
     def is_checkmate(self, color):
         king = self.kings[color.value]
+
         attackers = self.get_attacking((king.row, king.col), king.color.opposite())
 
         # Check if king was captured
@@ -417,7 +422,39 @@ class Board:
 
         # Check if the king can escape or capture the attacking piece
         for pos in self.get_available(king):
-            if len(self.get_attacking(pos, king.color.opposite())) == 0:
+            attack_pieces = []
+
+            for piece_type in self.active[color.opposite().value].keys():
+                attack_piece = self.active[color.opposite().value][piece_type]
+                positions = set()
+
+                for move in attack_piece.moves:
+                    if attack_piece.color == COLOR.WHITE:
+                        row, col = (
+                            attack_piece.row + move[0],
+                            attack_piece.col + move[1],
+                        )
+                    else:
+                        row, col = (
+                            attack_piece.row - move[0],
+                            attack_piece.col - move[1],
+                        )
+
+                    if row != attack_piece.row or col != attack_piece.col:
+                        positions.add((row, col))
+                king_is_blocked = False
+                path = self.__get_path(attack_piece.pos(), pos)
+
+                for row, col in path:
+                    if (
+                        self.grid[row][col] is not None
+                        and self.grid[row][col] is not king
+                    ):
+                        king_is_blocked = True
+                        break
+                if pos in positions and not king_is_blocked:
+                    attack_pieces.append(attack_piece)
+            if len(attack_pieces) == 0:
                 return False
 
         # Check if any piece can block the attack
@@ -431,7 +468,6 @@ class Board:
                 defender = self.active[king.color.value][piece_type]
 
                 for move in self.get_available(defender):
-
                     if move in path:
                         return False
 
@@ -447,6 +483,11 @@ class Board:
 
         return True
 
+    def is_check(self, color: pieces.COLOR):
+        king = self.kings[color.value]
+        attackers = self.get_attacking(king.pos(), color.opposite())
+        return len(attackers) > 0
+
     def show(self):
         import os
         import platform
@@ -455,6 +496,7 @@ class Board:
             os.system("cls")
         else:
             os.system("clear")
+
         print("   ", end="")
         for col in range(self.size):
             print(col, " ", end="")

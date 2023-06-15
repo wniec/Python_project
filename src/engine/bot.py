@@ -1,17 +1,18 @@
-import queue
-from pieces import COLOR
-import pieces
-from pieces import pieces_dict
+import engine.pieces as pieces
 import numpy as np
-import json
+import queue
 import time
+
+from config.defs import SRC_DIR
+from engine.pieces import COLOR
+from engine.pieces import pieces_dict
+
+MATRIX_PATH = SRC_DIR + "/resources/bot/values.npy"
 
 
 def read_matrix():
-    with open("values.json", "r") as read_file:
-        decoded_array = json.load(read_file)
-        matrix = np.asarray(decoded_array["valueMatrix"])
-        return matrix
+    matrix = np.load(MATRIX_PATH, allow_pickle=True, mmap_mode="r")
+    return matrix
 
 
 def matrix_position(position, color: COLOR):
@@ -46,14 +47,16 @@ class Bot:
         return drop_result
 
     def __evaluate(self, color: COLOR, depth: int):
-        if self.board.get_attacking(
-            self.board.kings[color.value].pos(), color.opposite()
-        ):
-            return -depth * 10_000
-        side_0 = sum(piece.value for piece in self.board.captured[color.value].values())
+        if self.board.is_check(color) and depth == self.depth:
+            return -depth * 20_000
+        if self.board.is_checkmate(color.opposite()):
+            return depth * 20_000
+        side_0 = sum(
+            piece.value_in_hand for piece in self.board.captured[color.value].values()
+        )
         side_0 += sum(piece.value for piece in self.board.active[color.value].values())
         side_1 = sum(
-            piece.value
+            piece.value_in_hand
             for piece in self.board.captured[color.opposite().value].values()
         )
         side_1 += sum(
@@ -71,37 +74,37 @@ class Bot:
         )
         return side_0 - side_1
 
-    def __add_move(self, best_queue, color: COLOR, piece_sign: str):
+    def __add_move(self, best_queue, color: COLOR, piece_sign: str, depth: int):
         piece = self.board.active[color.value][piece_sign]
         possible = self.board.get_available(piece, True)
         for x, y in possible:
             if piece.can_promote(x):
                 piece.promote()
                 best_queue.put(
-                    (-self.__test_move(piece, x, y, 1), x, y, piece, False, True)
+                    (-self.__test_move(piece, x, y, depth), x, y, piece, False, True)
                 )
                 piece.degrade()
             best_queue.put(
                 (-self.__test_move(piece, x, y, 1), x, y, piece, False, False)
             )
 
-    def __add_drop(self, best_queue, color: COLOR, piece_sign: str):
+    def __add_drop(self, best_queue, color: COLOR, piece_sign: str, depth: int):
         piece = self.board.captured[color.value][piece_sign]
         possible = self.board.get_available_drops(piece, True)
         for x, y in possible:
             best_queue.put(
-                (-self.__test_drop(piece, x, y, 1), x, y, piece, True, False)
+                (-self.__test_drop(piece, x, y, depth), x, y, piece, True, False)
             )
 
-    def __test_best_moves_depth1(self, color: pieces.COLOR) -> list[tuple]:
+    def __test_best_moves_depth1(self, color: pieces.COLOR, depth: int) -> list[tuple]:
         best = queue.PriorityQueue()
         result = []
 
         for piece_sign in list(self.board.active[color.value]):
-            self.__add_move(best, color, piece_sign)
+            self.__add_move(best, color, piece_sign, depth)
 
         for piece_sign in list(self.board.captured[color.value]):
-            self.__add_drop(best, color, piece_sign)
+            self.__add_drop(best, color, piece_sign, depth)
 
         i = 0
         while i < self.width and not best.empty():
@@ -123,12 +126,12 @@ class Bot:
         if depth is None:
             depth = self.depth
         if depth == 1:
-            result = self.__test_best_moves_depth1(color)
+            result = self.__test_best_moves_depth1(color, 1)
             if result and result[0][0] > -10_000:
                 return result[0]
 
         else:
-            potential_moves = self.__test_best_moves_depth1(color)
+            potential_moves = self.__test_best_moves_depth1(color, depth)
             best_move = None
             worst_move_val = float("inf")
             for move in potential_moves:
@@ -147,12 +150,9 @@ class Bot:
                     self.board.revert_drop(piece)
                 else:
                     self.board.revert_move(piece, captured, old_pos, was_promoted)
-                if (
-                    opposite_move is not None
-                    and opposite_move[0] - 0.1 * value < worst_move_val
-                ):
+                if opposite_move is not None and opposite_move[0] < worst_move_val:
                     best_move = (
-                        -opposite_move[0] + 0.1 * value,
+                        -opposite_move[0],
                         x,
                         y,
                         piece,
@@ -163,6 +163,7 @@ class Bot:
             return best_move
 
     def play_against_bot(self, bot):
+        bots = [self, bot]
         """
         function for testing bot
         A bot vs bot game: returns COLOR of winner
@@ -174,7 +175,7 @@ class Bot:
             if self.board.is_checkmate(color):
                 print("mat")
                 return color.opposite()
-            move = self.best_move(color)
+            move = bots[i % 2].best_move(color)
             if move is None:
                 print("pat")
                 return None
