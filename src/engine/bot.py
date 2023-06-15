@@ -47,10 +47,12 @@ class Bot:
         return drop_result
 
     def __evaluate(self, color: COLOR, depth: int):
-        if self.board.is_check(color) and depth == self.depth:
+        if self.board.is_checkmate(color) and depth == self.depth:
             return -depth * 20_000
         if self.board.is_checkmate(color.opposite()):
             return depth * 20_000
+        if self.board.is_check(color):
+            return -5_000
         side_0 = sum(
             piece.value_in_hand for piece in self.board.captured[color.value].values()
         )

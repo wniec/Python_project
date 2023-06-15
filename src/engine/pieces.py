@@ -138,8 +138,8 @@ class King(Piece):
         super().__init__(pos, color, promoted)
         self.name = "K"
         self.moves = kingMoves
-        self.value = 100000
-        self.value_in_hand = 100000
+        self.value = 100_000
+        self.value_in_hand = 100_000
 
 
 class Rook(Piece):
